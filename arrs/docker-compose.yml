@@ -1,0 +1,68 @@
+name: cpam-arrs
+
+services:
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=997
+      - PGID=997
+      - TZ=America/New_York
+    volumes:
+      - /var/lib/sonarr:/config
+      - /home/plex/sorted/TV:/tv
+      - /home/plex/scratch/nzbdrone:/downloads
+      - /mnt/sftp/unitmonkey:/rtorrent
+    ports:
+      - 8989:8989
+    restart: unless-stopped
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    environment:
+      - PUID=997
+      - PGID=997
+      - TZ=America/New_York
+    volumes:
+      - /var/lib/plexmediaserver/.config/Radarr:/config
+      - /home/plex/sorted/Movies:/movies
+      - /home/plex/scratch/complete/movies:/downloads
+      - /mnt/sftp/unitmonkey:/rtorrent
+    ports:
+      - 7878:7878
+    restart: unless-stopped
+
+  preradarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: preradarr
+    environment:
+      - PUID=997
+      - PGID=997
+      - TZ=America/New_York
+    volumes:
+      - /var/lib/plexmediaserver/.config/Pre:/config
+      - /home/plex/sorted/Pre:/movies
+      - /home/plex/scratch/complete/pre:/downloads
+      - /mnt/sftp/unitmonkey:/rtorrent
+    ports:
+      - 7879:7879
+    restart: unless-stopped
+
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    environment:
+      - PUID=997
+      - PGID=997
+      - TZ=America/New_York
+    volumes:
+      - /var/lib/plexmediaserver/.config/Lidarr:/config
+      - /home/plex/sorted/Music:/music
+      - /home/plex/scratch/complete/music:/downloads
+      - /mnt/sftp/unitmonkey:/rtorrent
+    ports:
+      - 8686:8686
+    restart: unless-stopped
+

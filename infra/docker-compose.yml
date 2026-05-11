@@ -1,0 +1,89 @@
+name: cpam-infra
+
+services:
+
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:latest
+    container_name: sabnzbd
+    environment:
+      - PUID=997
+      - PGID=997
+      - TZ=America/New_York
+    volumes:
+      - /opt/sabnzbd:/config
+      - /home/plex/scratch:/downloads
+    ports:
+      - 8080:8080
+    restart: unless-stopped
+
+  tautulli:
+    image: ghcr.io/tautulli/tautulli:latest
+    container_name: tautulli
+    environment:
+      - PUID=114
+      - PGID=1002
+      - TZ=America/New_York
+    volumes:
+      - /opt/Tautulli:/config
+    ports:
+      - 8181:8181
+    restart: unless-stopped
+
+  wizarr:
+    image: ghcr.io/wizarrrr/wizarr:latest
+    container_name: wizarr
+    environment:
+      - TZ=America/New_York
+      - APP_URL=https://invite.cpam.tv
+      - DISABLE_BUILTIN_AUTH=false
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - /var/lib/plexmediaserver/.config/Wizarr:/data/database
+    ports:
+      - 5690:5690
+    restart: unless-stopped
+
+  kometa:
+    image: kometateam/kometa:latest
+    container_name: kometa
+    environment:
+      - TZ=America/New_York
+    volumes:
+      - /var/lib/plexmediaserver/.config/plex-meta-manager/config:/config
+    restart: "no"
+
+  seerr:
+    image: seerr/seerr:latest
+    container_name: seerr
+    environment:
+      - TZ=America/New_York
+      - LOG_LEVEL=debug
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - /opt/overseerr:/app/config
+    ports:
+      - 5055:5055
+    restart: unless-stopped
+
+  wrapperr:
+    image: ghcr.io/aunefyren/wrapperr:latest
+    container_name: wrapperr
+    volumes:
+      - /opt/wrapperr:/app/config  # FIX: add this before cutover
+    ports:
+      - 8282:8282
+    restart: unless-stopped
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    environment:
+      - TZ=America/New_York
+      - WATCHTOWER_SCHEDULE=0 0 4 * * *    # 4am daily
+      - WATCHTOWER_CLEANUP=true             # remove old images after update
+      - WATCHTOWER_INCLUDE_STOPPED=false
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
