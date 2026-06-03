@@ -13,7 +13,7 @@ services:
       - /var/lib/sonarr:/config
       - /home/plex/sorted/TV:/tv
       - /home/plex/scratch/nzbdrone:/downloads
-      - /mnt/sftp/unitmonkey:/rtorrent
+      - /mnt/sftp/unitmonkey/torrents/rtorrent:/rtorrent
     ports:
       - 8989:8989
     restart: unless-stopped
@@ -29,7 +29,7 @@ services:
       - /var/lib/plexmediaserver/.config/Radarr:/config
       - /home/plex/sorted/Movies:/movies
       - /home/plex/scratch/complete/movies:/downloads
-      - /mnt/sftp/unitmonkey:/rtorrent
+      - /mnt/sftp/unitmonkey/torrents/rtorrent:/rtorrent
     ports:
       - 7878:7878
     restart: unless-stopped
@@ -45,7 +45,7 @@ services:
       - /var/lib/plexmediaserver/.config/Pre:/config
       - /home/plex/sorted/Pre:/movies
       - /home/plex/scratch/complete/pre:/downloads
-      - /mnt/sftp/unitmonkey:/rtorrent
+      - /mnt/sftp/unitmonkey/torrents/rtorrent:/rtorrent
     ports:
       - 7879:7879
     restart: unless-stopped
@@ -61,7 +61,7 @@ services:
       - /var/lib/plexmediaserver/.config/Lidarr:/config
       - /home/plex/sorted/Music:/music
       - /home/plex/scratch/complete/music:/downloads
-      - /mnt/sftp/unitmonkey:/rtorrent
+      - /mnt/sftp/unitmonkey/torrents/rtorrent:/rtorrent
     ports:
       - 8686:8686
     restart: unless-stopped
