@@ -43,6 +43,7 @@ def require_env(name: str) -> str:
 
 DISCORD_TOKEN = require_env("DISCORD_TOKEN")
 DISCORD_GUILD_ID = int(require_env("DISCORD_GUILD_ID"))
+DISCORD_CHANNEL_ID = int(os.environ.get("DISCORD_CHANNEL_ID", "0"))
 WIZARR_URL = require_env("WIZARR_URL").rstrip("/")
 WIZARR_API_KEY = require_env("WIZARR_API_KEY")
 WIZARR_PUBLIC_URL = require_env("WIZARR_PUBLIC_URL").rstrip("/")
@@ -218,6 +219,17 @@ client = AudioBot()
 )
 async def audiobooks(interaction: discord.Interaction) -> None:
     user = interaction.user
+    if DISCORD_CHANNEL_ID and interaction.channel_id != DISCORD_CHANNEL_ID:
+        log.info(
+            "/audiobooks rejected: %s used channel %s",
+            interaction.user.id,
+            interaction.channel_id,
+        )
+        await interaction.response.send_message(
+            f"Run this in <#{DISCORD_CHANNEL_ID}>.",
+            ephemeral=True,
+        )
+        return
     await interaction.response.defer(ephemeral=True, thinking=True)
     log.info("/audiobooks invoked by %s (id=%s)", user, user.id)
 

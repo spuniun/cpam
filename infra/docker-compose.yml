@@ -67,34 +67,34 @@ services:
       - 5055:5055
     restart: unless-stopped
 
-audiobot:
-  build: ./audiobot
-  container_name: audiobot
-  environment:
-    - TZ=${TZ}
-    - LOG_LEVEL=INFO
-    - DISCORD_TOKEN=${AUDIOBOT_DISCORD_TOKEN}
-    - DISCORD_GUILD_ID=${CPAM_GUILD_ID}
-    - WIZARR_URL=http://wizarr:5690
-    - WIZARR_API_KEY=${WIZARR_API_KEY}
-    - WIZARR_PUBLIC_URL=https://wizarr.cpam.tv
-    - WIZARR_SERVER_IDS=1
-    - EXPIRES_IN_DAYS=7
-    - STATE_FILE=/data/invites.json
-  volumes:
-    - /var/lib/plexmediaserver/.config/audiobot:/data
-  networks:
-    - default
-    - cpam-shared
-  depends_on:
-    - wizarr
-  restart: unless-stopped
+  audiobot:
+    build: ./audiobot
+    container_name: audiobot
+    environment:
+      - TZ=${TZ}
+      - LOG_LEVEL=INFO
+      - DISCORD_TOKEN=${AUDIOBOT_DISCORD_TOKEN}
+      - DISCORD_GUILD_ID=${CPAM_GUILD_ID}
+      - WIZARR_URL=http://wizarr:5690
+      - WIZARR_API_KEY=${WIZARR_API_KEY}
+      - WIZARR_PUBLIC_URL=https://invite.cpam.tv
+      - WIZARR_SERVER_IDS=2
+      - EXPIRES_IN_DAYS=1
+      - STATE_FILE=/data/invites.json
+    volumes:
+      - /var/lib/plexmediaserver/.config/audiobot:/data
+    networks:
+      - default
+      - cpam-shared
+    depends_on:
+      - wizarr
+    restart: unless-stopped
 
   wrapperr:
     image: ghcr.io/aunefyren/wrapperr:latest
     container_name: wrapperr
     volumes:
-      - /opt/wrapperr:/app/config # FIX: add this before cutover
+      - /opt/wrapperr:/app/config
     ports:
       - 8282:8282
     restart: unless-stopped
@@ -104,8 +104,8 @@ audiobot:
     container_name: watchtower
     environment:
       - TZ=${TZ:-America/New_York}
-      - WATCHTOWER_SCHEDULE=0 0 4 * * * # 4am daily
-      - WATCHTOWER_CLEANUP=true # remove old images after update
+      - WATCHTOWER_SCHEDULE=0 0 4 * * *   # 4am daily
+      - WATCHTOWER_CLEANUP=true           # remove old images after update
       - WATCHTOWER_INCLUDE_STOPPED=false
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
