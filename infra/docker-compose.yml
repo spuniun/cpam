@@ -75,6 +75,7 @@ services:
       - LOG_LEVEL=INFO
       - DISCORD_TOKEN=${AUDIOBOT_DISCORD_TOKEN}
       - DISCORD_GUILD_ID=${CPAM_GUILD_ID}
+      - DISCORD_CHANNEL_ID=${AUDIOBOT_CHANNEL_ID}
       - WIZARR_URL=http://wizarr:5690
       - WIZARR_API_KEY=${WIZARR_API_KEY}
       - WIZARR_PUBLIC_URL=https://invite.cpam.tv
