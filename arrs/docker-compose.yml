@@ -6,9 +6,9 @@ services:
     image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr
     environment:
-      - PUID=997
-      - PGID=997
-      - TZ=America/New_York
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ:-America/New_York}
     volumes:
       - /var/lib/sonarr:/config
       - /home/plex/sorted/TV:/tv
@@ -22,9 +22,9 @@ services:
     image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
     environment:
-      - PUID=997
-      - PGID=997
-      - TZ=America/New_York
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ:-America/New_York}
     volumes:
       - /var/lib/plexmediaserver/.config/Radarr:/config
       - /home/plex/sorted/Movies:/movies
@@ -38,9 +38,9 @@ services:
     image: lscr.io/linuxserver/radarr:latest
     container_name: preradarr
     environment:
-      - PUID=997
-      - PGID=997
-      - TZ=America/New_York
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ:-America/New_York}
     volumes:
       - /var/lib/plexmediaserver/.config/Pre:/config
       - /home/plex/sorted/Pre:/movies
@@ -54,9 +54,9 @@ services:
     image: lscr.io/linuxserver/lidarr:latest
     container_name: lidarr
     environment:
-      - PUID=997
-      - PGID=997
-      - TZ=America/New_York
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ:-America/New_York}
     volumes:
       - /var/lib/plexmediaserver/.config/Lidarr:/config
       - /home/plex/sorted/Music:/music
@@ -65,4 +65,46 @@ services:
     ports:
       - 8686:8686
     restart: unless-stopped
+
+  listenarr:
+    image: ghcr.io/listenarrs/listenarr:canary
+    container_name: listenarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ:-America/New_York}
+      - UMASK=022
+      - LISTENARR_PUBLIC_URL=https://audio.cpam.tv
+    volumes:
+      - /var/lib/plexmediaserver/.config/Listenarr:/app/config
+      - /home/plex/sorted/Audiobooks:/audiobooks
+      - /mnt/sftp/unitmonkey/Downloads/audiobooks:/downloads
+    ports:
+      - 4545:4545
+    restart: unless-stopped
+
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    container_name: audiobookshelf
+    environment:
+      - AUDIOBOOKSHELF_UID=${PUID}
+      - AUDIOBOOKSHELF_GID=${PGID}
+      - TZ=${TZ:-America/New_York}
+    volumes:
+      # Config (SQLite DB) + metadata MUST be plain local disk — never the encfs/gdrive union
+      - /var/lib/plexmediaserver/.config/audiobookshelf/config:/config
+      - /var/lib/plexmediaserver/.config/audiobookshelf/metadata:/metadata
+      # Library mounted read-only; Readarr owns writes to these files
+      - /home/plex/sorted/Audiobooks:/audiobooks
+      - /home/plex/sorted/Podcasts:/podcasts
+    ports:
+      - "127.0.0.1:13378:80"   # bound to loopback; nginx + Cloudflare front it
+    restart: unless-stopped
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+          gateway: 172.28.0.1
 

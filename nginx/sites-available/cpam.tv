@@ -1,0 +1,301 @@
+server {
+        server_name plex.cpam.tv;
+        include /etc/nginx/conf.d/common.include;
+        return https://app.plex.tv/web/;
+}
+
+server {
+        server_name dash.cpam.tv;
+        include /etc/nginx/conf.d/common.include;
+	root /var/www/organizer;
+	index index.php index.html index.htm;
+        location / { 
+		set                     $app organizr;
+		include                 /etc/nginx/conf.d/theme-park.include;
+		try_files		$uri $uri/ =404;
+	}
+	location ~ \.php$ {
+		try_files		$uri =404;
+		include			/etc/nginx/fastcgi.conf;
+		fastcgi_pass		unix:/run/php/php8.0-fpm.sock;
+	}
+	location /api/v2 {
+		try_files $uri /api/v2/index.php$is_args$args;
+	}
+	location /plex {
+		return			301 $scheme://$host/plex/;
+	}
+	location ^~ /plex/ {
+		rewrite			/plex(.*) $1 break;
+		proxy_pass		http://172.20.20.250:32400/;
+		proxy_intercept_errors	off;
+		proxy_bind 		$server_addr;
+		proxy_buffers 		32 4k;
+            	proxy_cache_bypass 	$cookie_session;
+		proxy_hide_header 	X-Frame-Options;
+            	proxy_http_version 	1.1;
+            	proxy_no_cache 		$cookie_session;
+		proxy_set_header	X-Plex-Client-Identifier $http_x_plex_client_identifier;
+		proxy_set_header	X-Plex-Device $http_x_plex_device;
+		proxy_set_header	X-Plex-Device-Name $http_x_plex_device_name;
+		proxy_set_header	X-Plex-Platform $http_x_plex_platform;
+		proxy_set_header	X-Plex-Platform-Version $http_x_plex_platform_version;
+		proxy_set_header	X-Plex-Product $http_x_plex_product;
+		proxy_set_header	X-Plex-Token $http_x_plex_token;
+		proxy_set_header	X-Plex-Version $http_x_plex_version;
+		proxy_set_header	X-Plex-Nocache $http_x_plex_nocache;
+		proxy_set_header	X-Plex-Provides $http_x_plex_provides;
+		proxy_set_header	X-Plex-Device-Vendor $http_x_plex_device_vendor;
+		proxy_set_header	X-Plex-Model $http_x_plex_model;
+	}
+	if ($http_referer ~ /plex) {
+		rewrite 	^/web/(.*) /plex/web/$1? redirect;
+	}
+}
+
+server {
+        server_name sonarr.cpam.tv;
+	include /etc/nginx/conf.d/common.include;
+        location / {
+                proxy_pass              http://172.20.20.250:8989;
+                proxy_redirect          off;
+                proxy_set_header        Host $http_host;
+                proxy_set_header        X-Real-IP $http_cf_connecting_ip;
+                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header        X-Forwarded-Proto $scheme;
+		proxy_set_header        X-Forwarded-Ssl on;
+		proxy_set_header	Upgrade $http_upgrade;
+		proxy_set_header 	Connection $connection_upgrade;
+		proxy_http_version	1.1;
+                set                     $app sonarr;
+                #include                 /etc/nginx/conf.d/theme-park.include;
+        }
+}
+
+server {
+        server_name radarr.cpam.tv;
+        include /etc/nginx/conf.d/common.include;
+        location / {
+                proxy_pass              http://172.20.20.250:7878;
+                proxy_redirect          off;
+                proxy_set_header        Host $http_host;
+                proxy_set_header        X-Real-IP $http_cf_connecting_ip;
+                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header        X-Forwarded-Proto $scheme;
+		proxy_set_header        X-Forwarded-Ssl on;
+		proxy_set_header        Upgrade $http_upgrade;
+                proxy_set_header        Connection $connection_upgrade;
+                proxy_http_version      1.1;
+                set                     $app radarr;
+                #include                 /etc/nginx/conf.d/theme-park.include;
+        }
+}
+
+server {
+        server_name pre.cpam.tv;
+        include /etc/nginx/conf.d/common.include;
+        location / {
+                proxy_pass              http://172.20.20.250:7879;
+                proxy_redirect          off;
+                proxy_set_header        Host $http_host;
+                proxy_set_header        X-Real-IP $http_cf_connecting_ip;
+                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header        X-Forwarded-Proto $scheme;
+		proxy_set_header        X-Forwarded-Ssl on;
+                proxy_set_header        Upgrade $http_upgrade;
+                proxy_set_header        Connection $connection_upgrade;
+                proxy_http_version      1.1;
+                set                     $app radarr;
+                #include                 /etc/nginx/conf.d/theme-park.include;
+        }
+}
+
+server {
+        server_name lidarr.cpam.tv;
+        include /etc/nginx/conf.d/common.include;
+        location / {
+                proxy_pass              http://172.20.20.250:8686;
+                proxy_redirect          off;
+                proxy_set_header        Host $http_host;
+                proxy_set_header        X-Real-IP $http_cf_connecting_ip;
+                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header        X-Forwarded-Proto $scheme;
+		proxy_set_header        X-Forwarded-Ssl on;
+                proxy_set_header        Upgrade $http_upgrade;
+                proxy_set_header        Connection $connection_upgrade;
+                proxy_http_version      1.1;
+                set                     $app lidarr;
+                #include                 /etc/nginx/conf.d/theme-park.include;
+        }
+}
+
+server {
+        server_name audio.cpam.tv;
+        include /etc/nginx/conf.d/common.include;
+        location / {
+                proxy_pass              http://172.20.20.250:4545;
+                proxy_redirect          off;
+                proxy_set_header        Host $http_host;
+                proxy_set_header        X-Real-IP $http_cf_connecting_ip;
+                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header        X-Forwarded-Proto $scheme;
+                proxy_set_header        X-Forwarded-Ssl on;
+                proxy_set_header        Upgrade $http_upgrade;
+                proxy_set_header        Connection $connection_upgrade;
+                proxy_http_version      1.1;
+                set                     $app lidarr;
+                #include                 /etc/nginx/conf.d/theme-park.include;
+        }
+}
+
+server {
+        server_name wrapped.cpam.tv;
+        include /etc/nginx/conf.d/common.include;
+        location / {
+                proxy_pass              http://172.20.20.250:8282;
+                proxy_redirect          off;
+                proxy_set_header        Host $http_host;
+                proxy_set_header        X-Real-IP $http_cf_connecting_ip;
+                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header        X-Forwarded-Proto $scheme;
+                proxy_set_header        X-Forwarded-Ssl on;
+                proxy_set_header        Upgrade $http_upgrade;
+                proxy_set_header        Connection $connection_upgrade;
+                proxy_http_version      1.1;
+                set                     $app wrapperr;
+                #include                 /etc/nginx/conf.d/theme-park.include;
+        }
+}
+
+server {
+        server_name requests.cpam.tv;
+        include /etc/nginx/conf.d/common.include;
+        location / {
+                proxy_pass              http://172.20.20.250:5055;
+                proxy_redirect          off;
+                proxy_set_header        Host $http_host;
+                proxy_set_header        X-Real-IP $http_cf_connecting_ip;
+                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header        X-Forwarded-Proto $scheme;
+                proxy_set_header        X-Forwarded-Ssl on;
+                proxy_http_version      1.1;
+                set                     $app overseerr;
+                #include                 /etc/nginx/conf.d/theme-park.include;
+        }
+}
+
+server {
+        server_name status.cpam.tv;
+	include /etc/nginx/conf.d/common.include;
+        location / {
+                proxy_pass              http://localhost:3000;
+		proxy_set_header        Host $http_host;
+                proxy_set_header        X-Real-IP $http_cf_connecting_ip;
+		proxy_set_header	X-Forwarded-Host $server_name;
+                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header        X-Forwarded-Proto $scheme;
+                proxy_set_header        X-Forwarded-Ssl on;
+		proxy_set_header	X-Frame-Options SAMEORIGIN;
+		proxy_hide_header	X-Frame-Options;
+                set                     $app grafana;
+                #include                 /etc/nginx/conf.d/theme-park.include;
+        }
+	location /api/live {
+    		rewrite  		^/(.*) /$1 break;
+    		proxy_http_version 	1.1;
+    		proxy_set_header 	Upgrade $http_upgrade;
+    		proxy_set_header 	Connection $connection_upgrade;
+    		proxy_set_header 	Host $http_host;
+    		proxy_pass 		http://localhost:3000/;
+  	}
+}
+
+server {
+        server_name sabnzbd.cpam.tv;
+        include /etc/nginx/conf.d/common.include;
+        location / {
+                proxy_pass              http://172.20.20.250:8080;
+                proxy_redirect          http://  $scheme://;
+                proxy_set_header        Host $http_host;
+                proxy_set_header        X-Real-IP $http_cf_connecting_ip;
+                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header        X-Forwarded-Proto $scheme;
+                proxy_set_header        Connection "";
+                proxy_http_version      1.1;
+		proxy_cache_bypass 	$cookie_session;
+		proxy_no_cache 		$cookie_session;
+		proxy_buffers 		32 4k;
+                set                     $app sabnzbd;
+                #include                 /etc/nginx/conf.d/theme-park.include;
+        }
+}
+
+server {
+        server_name tautulli.cpam.tv;
+        include /etc/nginx/conf.d/common.include;
+        location / {
+                proxy_pass              http://172.20.20.250:8181;
+                proxy_redirect          ~^(?:http(?:s)?:\/\/)([^:\/]+)(?::\d+)?(\/.*)?$ https://$1$2;
+                proxy_set_header        Host $http_host;
+                proxy_set_header        X-Real-IP $http_cf_connecting_ip;
+                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header        X-Forwarded-Proto $scheme;
+		proxy_set_header	X-Forwarded-Ssl on;
+                proxy_set_header        Upgrade $http_upgrade;
+                proxy_set_header        Connection $connection_upgrade;
+                proxy_http_version      1.1;
+                set                     $app tautulli;
+                #include                 /etc/nginx/conf.d/theme-park.include;
+        }
+}
+
+server {
+    	server_name listen.cpam.tv;
+    	include /etc/nginx/conf.d/common.include;
+    	location / {
+        	proxy_pass http://127.0.0.1:13378;
+        	proxy_http_version 1.1;
+        	proxy_set_header Upgrade $http_upgrade;
+        	proxy_set_header Connection "upgrade";
+        	proxy_set_header Host $host;
+        	proxy_set_header X-Real-IP $remote_addr;
+        	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        	proxy_set_header X-Forwarded-Proto $scheme;
+        	proxy_read_timeout 36000s;    # long-lived WS
+    	}
+}
+
+server {
+        server_name pods.cpam.tv;
+	include /etc/nginx/conf.d/common.include;
+	root /var/www/podcasts;
+        index index.php index.html index.htm;
+	auth_basic "Restricted Content";
+	auth_basic_user_file /etc/nginx/.htpasswd;
+	rewrite ^/(.+)/rss$ /dir2cast.php?dir=$1 last;
+	location / {
+		try_files $uri $uri/ /index.php?$args;
+	}
+	location ~* \.(mp3|m4b)$ {
+    		add_header Accept-Ranges bytes;
+    		mp4_buffer_size 1m;
+    		mp4_max_buffer_size 5m;
+    
+    		# Enable byte-range processing
+    		add_header 'Access-Control-Allow-Origin' '*';
+    		add_header 'Access-Control-Allow-Methods' 'GET, HEAD, OPTIONS';
+    		add_header 'Access-Control-Allow-Headers' 'Range,DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type';
+    
+    		# Ensure proper MIME types
+    		types {
+        		audio/mpeg mp3;
+        		audio/x-m4b m4b;  # Specific MIME type for m4b audiobook files
+    		}
+	}
+	location ~ \.php$ {
+                try_files $uri =404;
+                include /etc/nginx/fastcgi.conf;
+                fastcgi_pass unix:/run/php/php7.4-fpm.sock;
+		fastcgi_read_timeout 300s;
+        }
+}
