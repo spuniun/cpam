@@ -79,7 +79,11 @@ class InviteState:
             log.info("No state file at %s; starting empty", self._path)
             return
         try:
-            self._data = json.loads(self._path.read_text())
+            content = self._path.read_text().strip()
+            if not content:
+                log.info("State file %s is empty; starting empty", self._path)
+                return
+            self._data = json.loads(content)
             log.info("Loaded %d invite record(s) from %s", len(self._data), self._path)
         except (json.JSONDecodeError, OSError) as exc:
             log.error("Could not read state file %s: %s", self._path, exc)
