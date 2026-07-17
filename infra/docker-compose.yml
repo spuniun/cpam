@@ -41,7 +41,10 @@ services:
     volumes:
       - /var/lib/plexmediaserver/.config/Wizarr:/data/database
     ports:
-      - 5690:5690
+      - 127.0.0.1:5690:5690
+    networks:
+      - default
+      - cpam-shared
     restart: unless-stopped
 
   kometa:
@@ -107,3 +110,7 @@ audiobot:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
+
+networks:
+  cpam-shared:
+    external: true

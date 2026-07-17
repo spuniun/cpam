@@ -99,6 +99,9 @@ services:
       - /home/plex/sorted/Podcasts:/podcasts
     ports:
       - "127.0.0.1:13378:80"   # bound to loopback; nginx + Cloudflare front it
+    networks:
+      - default
+      - cpam-shared
     restart: unless-stopped
 
 networks:
@@ -107,4 +110,5 @@ networks:
       config:
         - subnet: 172.28.0.0/16
           gateway: 172.28.0.1
-
+  cpam-shared:
+    external: true
