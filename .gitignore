@@ -1,0 +1,29 @@
+# Secrets and local environment — never commit
+.env
+.env.*
+*.key
+*.pem
+.htpasswd
+encfs6.xml
+
+# Runtime state and logs (these live on the server, not in git)
+*.log
+invites.json
+
+# Python (audiobot)
+__pycache__/
+*.py[cod]
+.venv/
+
+# Claude Code: local settings stay per-machine; a shared .claude/settings.json
+# would be intentionally committed
+.claude/settings.local.json
+
+# Editor / OS cruft (repo is edited from Windows/WSL)
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.idea/
+.vscode/

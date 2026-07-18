@@ -1,0 +1,36 @@
+# doplarr — Discord request bot fronting Seerr (requests.cpam.tv)
+# ${VAR} values are resolved from the container environment at startup;
+# both are passed in via infra/docker-compose.yml from the server .env.
+
+discord_token = "${DOPLARR_DISCORD_TOKEN}"
+
+log_level = "info"
+
+# Announce successful requests in the channel (needs Send Messages permission).
+public_followup = true
+
+# Two Seerr backends against the same instance, split by media kind,
+# so Discord gets /request movie and /request series commands.
+# Seerr owns user mapping: requesters must have their Discord User ID set in
+# their Seerr profile (Profile → Settings → Notifications → Discord), or the
+# request is rejected. Uncomment fallback_user_id to attribute unlinked
+# users' requests to a Seerr user instead.
+
+[[backends]]
+media = "movie"
+
+[backends.config.Seerr]
+url = "http://seerr:5055"
+api_key = "${SEERR_API_KEY}"
+media_filter = "movie"
+# fallback_user_id = 1
+# allow_4k = true
+
+[[backends]]
+media = "series"
+
+[backends.config.Seerr]
+url = "http://seerr:5055"
+api_key = "${SEERR_API_KEY}"
+media_filter = "tv"
+# fallback_user_id = 1

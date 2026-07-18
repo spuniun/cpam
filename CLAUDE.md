@@ -11,7 +11,9 @@ repo runs locally — changes take effect only after being pulled to the server.
 | Path | Purpose |
 |---|---|
 | `arrs/docker-compose.yml` | Media-management stack (`cpam-arrs`): sonarr, radarr, preradarr, lidarr, listenarr, audiobookshelf |
-| `infra/docker-compose.yml` | Support stack (`cpam-infra`): sabnzbd, tautulli, wizarr, kometa, seerr, wrapperr, watchtower |
+| `infra/docker-compose.yml` | Support stack (`cpam-infra`): sabnzbd, tautulli, wizarr, kometa, seerr, audiobot, doplarr, wrapperr, watchtower |
+| `infra/audiobot/` | Custom Discord bot (locally built image): `/audiobooks` mints Wizarr invites for the audiobook library |
+| `infra/doplarr/config.toml` | Config for doplarr_rs, the Discord `/request` bot fronting Seerr |
 | `nginx/sites-available/cpam.tv` | All `*.cpam.tv` vhosts (one server block per app) |
 | `nginx/conf-available/` | Shared includes: `common.include` (TLS/headers), `cloudflare.ips`, `theme-park.include`, `letsencrypt.include` |
 | `mnt_plex.sh` / `umnt_plex.sh` | Bring the storage + arrs + Plex up / down (see boot order below) |
@@ -50,8 +52,14 @@ what's safe to evict locally, i.e. content already synced to gdrive).
 
 ## Docker stacks
 
-- `.env` on the server provides `PUID`/`PGID` (and optionally `TZ`); it is **not**
-  committed. Don't hardcode UIDs into the compose files.
+- `.env` on the server is **not** committed (and is gitignored). It currently must
+  provide: `PUID`, `PGID`, `TZ` (optional), `AUDIOBOT_DISCORD_TOKEN`, `CPAM_GUILD_ID`,
+  `AUDIOBOT_CHANNEL_ID`, `WIZARR_API_KEY`, `DOPLARR_DISCORD_TOKEN`, `SEERR_API_KEY`.
+  Don't hardcode UIDs or secrets into the compose files.
+- The infra stack also joins an **external** `cpam-shared` network (wizarr, audiobot);
+  it must exist on the server before `up`. Wizarr's port is loopback-only
+  (`127.0.0.1:5690`) — it's reached via nginx (`invite.cpam.tv`) and
+  container-to-container.
 - arrs stack pins subnet `172.28.0.0/16`. Host LAN IP is `172.20.20.250` — that's the
   address nginx proxies to and the compose port bindings serve on.
 - **audiobookshelf**: config + metadata volumes MUST stay on plain local disk
@@ -65,6 +73,37 @@ what's safe to evict locally, i.e. content already synced to gdrive).
 - Container configs live in a mix of `/opt/<app>` and
   `/var/lib/plexmediaserver/.config/<App>` on the server — match the existing pattern
   for the app family when adding services.
+
+## Discord bots
+
+Two bots, deliberately different in origin:
+
+- **audiobot** (`infra/audiobot/`, our own Python/discord.py code, built via
+  `build: ./audiobot`): `/audiobooks` mints or re-uses a Wizarr invitation and replies
+  ephemerally. Wizarr owns accounts/onboarding; the bot never touches Audiobookshelf or
+  passwords. Details that matter:
+  - Channel guard: the command only works in `DISCORD_CHANNEL_ID`
+    (`AUDIOBOT_CHANNEL_ID` in `.env`); unset/`0` **disables** the restriction entirely.
+  - State: `/data/invites.json` (host: `/var/lib/plexmediaserver/.config/audiobot`)
+    maps Discord user → issued invite. An empty/whitespace file is tolerated (starts
+    fresh); corrupt JSON is a deliberate hard-fail, so don't "fix" that by starting
+    empty. To reset for testing, `rm` the file or write `{}`.
+  - Runs with `Intents.none()` — the "Guilds intent seems to be disabled" warning at
+    startup is expected. Wizarr only accepts `EXPIRES_IN_DAYS` of 1, 7, or 30.
+  - Deploys need `docker compose up -d --build audiobot` — it's a locally built image,
+    so watchtower never updates it and a plain `up -d` keeps running stale code.
+- **doplarr** (`ghcr.io/activexray/doplarr_rs`, third-party): `/request movie` and
+  `/request series` slash commands that file requests through Seerr. Configured solely
+  by `infra/doplarr/config.toml`, mounted read-only at `/config.toml`; secrets enter
+  via `${VAR}` env substitution (an unset referenced var is a startup error, i.e.
+  crash-loop until `.env` is complete). It talks to Seerr as `http://seerr:5055` on the
+  compose default network. Requesters must have their Discord User ID linked in their
+  Seerr profile, or `fallback_user_id` must be set.
+
+Channel restriction convention: Discord-side per-command overrides (Server Settings →
+Integrations → bot → Channels) control visibility/execution for both bots; audiobot
+additionally enforces in code. doplarr has no in-config channel option — Discord-side
+is the only layer, and that's fine.
 
 ## Nginx / edge
 
