@@ -17,7 +17,7 @@ server {
 	location ~ \.php$ {
 		try_files		$uri =404;
 		include			/etc/nginx/fastcgi.conf;
-		fastcgi_pass		unix:/run/php/php8.0-fpm.sock;
+		fastcgi_pass		unix:/run/php/php8.5-fpm.sock;
 	}
 	location /api/v2 {
 		try_files $uri /api/v2/index.php$is_args$args;
@@ -182,32 +182,6 @@ server {
                 set                     $app overseerr;
                 #include                 /etc/nginx/conf.d/theme-park.include;
         }
-}
-
-server {
-        server_name status.cpam.tv;
-	include /etc/nginx/conf.d/common.include;
-        location / {
-                proxy_pass              http://localhost:3000;
-		proxy_set_header        Host $http_host;
-                proxy_set_header        X-Real-IP $http_cf_connecting_ip;
-		proxy_set_header	X-Forwarded-Host $server_name;
-                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header        X-Forwarded-Proto $scheme;
-                proxy_set_header        X-Forwarded-Ssl on;
-		proxy_set_header	X-Frame-Options SAMEORIGIN;
-		proxy_hide_header	X-Frame-Options;
-                set                     $app grafana;
-                #include                 /etc/nginx/conf.d/theme-park.include;
-        }
-	location /api/live {
-    		rewrite  		^/(.*) /$1 break;
-    		proxy_http_version 	1.1;
-    		proxy_set_header 	Upgrade $http_upgrade;
-    		proxy_set_header 	Connection $connection_upgrade;
-    		proxy_set_header 	Host $http_host;
-    		proxy_pass 		http://localhost:3000/;
-  	}
 }
 
 server {
