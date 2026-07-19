@@ -14,6 +14,7 @@ repo runs locally — changes take effect only after being pulled to the server.
 | `infra/docker-compose.yml` | Support stack (`cpam-infra`): sabnzbd, tautulli, wizarr, kometa, seerr, audiobot, doplarr, wrapperr, watchtower |
 | `infra/audiobot/` | Custom Discord bot (locally built image): `/audiobooks` mints Wizarr invites for the audiobook library |
 | `infra/doplarr/config.toml` | Config for doplarr_rs, the Discord `/request` bot fronting Seerr |
+| `infra/tautulli/monthly_stats.py` | Cron script: posts Tautulli's 30-day most-popular movies/TV to Discord (webhook, posters as attachments) |
 | `nginx/sites-available/cpam.tv` | All `*.cpam.tv` vhosts (one server block per app) |
 | `nginx/conf-available/` | Shared includes: `common.include` (TLS/headers), `cloudflare.ips`, `theme-park.include`, `letsencrypt.include` |
 | `mnt_plex.sh` / `umnt_plex.sh` | Bring the storage + arrs + Plex up / down (see boot order below) |
@@ -54,8 +55,13 @@ what's safe to evict locally, i.e. content already synced to gdrive).
 
 - `.env` on the server is **not** committed (and is gitignored). It currently must
   provide: `PUID`, `PGID`, `TZ` (optional), `AUDIOBOT_DISCORD_TOKEN`, `CPAM_GUILD_ID`,
-  `AUDIOBOT_CHANNEL_ID`, `WIZARR_API_KEY`, `DOPLARR_DISCORD_TOKEN`, `SEERR_API_KEY`.
+  `AUDIOBOT_CHANNEL_ID`, `WIZARR_API_KEY`, `DOPLARR_DISCORD_TOKEN`, `SEERR_API_KEY`,
+  `TAUTULLI_API_KEY`, `STATS_WEBHOOK_URL` (Discord webhook — treat as a secret).
   Don't hardcode UIDs or secrets into the compose files.
+- **Host cron** (not compose): `infra/tautulli/monthly_stats.py` runs on the 1st of
+  the month, sourcing the same `.env` (`set -a; . .env; set +a`). It fetches
+  `get_home_stats` from Tautulli on localhost:8181 and uploads posters to Discord as
+  attachments — deliberately, so the Tautulli API key never appears in embed URLs.
 - The infra stack also joins an **external** `cpam-shared` network (wizarr, audiobot);
   it must exist on the server before `up`. Wizarr's port is loopback-only
   (`127.0.0.1:5690`) — it's reached via nginx (`invite.cpam.tv`) and
@@ -130,7 +136,6 @@ is the only layer, and that's fine.
 | requests.cpam.tv | Seerr :5055 |
 | sabnzbd / tautulli / wrapped | :8080 / :8181 / :8282 |
 | invite.cpam.tv | Wizarr :5690 |
-| status.cpam.tv | Grafana :3000 (localhost) |
 | pods.cpam.tv | dir2cast podcast feed (php7.4, basic auth) |
 
 ## Conventions
