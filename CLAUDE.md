@@ -14,7 +14,7 @@ repo runs locally — changes take effect only after being pulled to the server.
 | `infra/docker-compose.yml` | Support stack (`cpam-infra`): sabnzbd, tautulli, wizarr, kometa, seerr, audiobot, doplarr, wrapperr, watchtower |
 | `infra/audiobot/` | Custom Discord bot (locally built image): `/audiobooks` mints Wizarr invites for the audiobook library |
 | `infra/doplarr/config.toml` | Config for doplarr_rs, the Discord `/request` bot fronting Seerr |
-| `infra/tautulli/monthly_stats.py` | Cron script: posts Tautulli's 30-day most-popular movies/TV to Discord (webhook, posters as attachments) |
+| `infra/tautulli/monthly_stats.py` | Cron script: posts Tautulli's 30-day most-popular movies/TV to Discord as a compact ranked list (webhook) |
 | `nginx/sites-available/cpam.tv` | All `*.cpam.tv` vhosts (one server block per app) |
 | `nginx/conf-available/` | Shared includes: `common.include` (TLS/headers), `cloudflare.ips`, `theme-park.include`, `letsencrypt.include` |
 | `mnt_plex.sh` / `umnt_plex.sh` | Bring the storage + arrs + Plex up / down (see boot order below) |
@@ -60,8 +60,11 @@ what's safe to evict locally, i.e. content already synced to gdrive).
   Don't hardcode UIDs or secrets into the compose files.
 - **Host cron** (not compose): `infra/tautulli/monthly_stats.py` runs on the 1st of
   the month, sourcing the same `.env` (`set -a; . .env; set +a`). It fetches
-  `get_home_stats` from Tautulli on localhost:8181 and uploads posters to Discord as
-  attachments — deliberately, so the Tautulli API key never appears in embed URLs.
+  `get_home_stats` from Tautulli on localhost:8181 and posts one compact webhook
+  message (two ranked-list embeds, no posters — a deliberate choice, twice over:
+  poster-per-title made posts huge, and image URLs via Tautulli's proxy would leak
+  the API key into embeds). Webhook calls need a non-default User-Agent or
+  Cloudflare 403s them (error 1010).
 - The infra stack also joins an **external** `cpam-shared` network (wizarr, audiobot);
   it must exist on the server before `up`. Wizarr's port is loopback-only
   (`127.0.0.1:5690`) — it's reached via nginx (`invite.cpam.tv`) and
