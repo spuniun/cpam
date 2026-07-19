@@ -1,0 +1,4 @@
+# Normalize everything to LF in the repo and on checkout — the server is Linux
+# and CRLF in shell scripts / nginx configs would break it. Git auto-detects
+# binaries, so this is safe repo-wide.
+* text=auto eol=lf
