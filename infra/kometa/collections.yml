@@ -1,0 +1,213 @@
+templates:
+  collection:
+    optional:
+      - collection
+      - movie
+    tmdb_collection_details: <<collection>>
+    tmdb_movie: <<movie>>
+    sort_title: "!040_<<collection_name>>"
+    sync_mode: sync
+    collection_order: release
+
+collections:
+  James Bond:
+    template: {name: collection}
+    trakt_list: https://trakt.tv/users/any/lists/james-bond
+    url_poster: https://i.imgur.com/DO6IDWi.jpeg
+    url_background: https://www.pixel4k.com/wp-content/uploads/2018/09/james-bond-007_1536401470.jpg
+
+  Bourne:
+    template: {name: collection}
+    trakt_list: https://trakt.tv/users/rzepkowski/lists/jason-bourne-movies
+    url_poster: https://theposterdb.com/api/assets/19519
+
+  Christmas:
+    template: {name: collection}
+    imdb_list: 
+      - https://www.imdb.com/list/ls000096828/
+      - https://www.imdb.com/list/ls031382358/
+      - https://www.imdb.com/list/ls047836098/
+    trakt_list: 
+      - https://trakt.tv/users/triadcool/lists/christmas
+      - https://trakt.tv/users/lewisb1120/lists/christmas
+    mdblist_list: https://mdblist.com/lists/CyberOxide/christmas
+    url_poster: https://theposterdb.com/api/assets/69443
+
+  DC Comics:
+    template: {name: collection}
+    trakt_list: https://trakt.tv/users/ljransom/lists/dc-universe-movies
+    mdblist_list:
+      - https://mdblist.com/lists/godzgiftmm/dc-animated-universe-and-dc-comics
+      - https://mdblist.com/lists/lt3dave/dc-comics-3nyof3xt9n
+      - https://mdblist.com/lists/asperate/dc-movies
+    url_poster: https://theposterdb.com/api/assets/314385
+
+  Die Hard:
+    template: {name: collection}
+    tmdb_collection: 1570
+    url_poster: https://theposterdb.com/api/assets/15956
+
+  Divergent:
+    template: {name: collection}
+    tmdb_collection: 283579
+    url_poster: https://theposterdb.com/api/assets/11987
+
+  Has Fallen:
+    template: {name: collection}
+    tmdb_collection: 386534
+    url_poster: https://theposterdb.com/api/assets/2926
+
+  A Nightmare on Elm Street:
+    template: {name: collection}
+    tmdb_collection: 8581
+    imdb_list: https://www.imdb.com/list/ls009545233/
+    url_poster: https://theposterdb.com/api/assets/12923
+
+  Hannibal Lecter:
+    template: {name: collection}
+    imdb_list: https://www.imdb.com/list/ls055275206/
+    url_poster: https://theposterdb.com/api/assets/164790
+
+  Indiana Jones:
+    template: {name: collection}
+    tmdb_collection: 84
+    trakt_list: https://trakt.tv/users/krissykk/lists/indiana-jones-franchise
+    imdb_id: tt0772251
+    url_poster: https://theposterdb.com/api/assets/11586
+
+  Friday the 13th:
+    template: {name: collection}
+    tmdb_collection: 9735
+    imdb_list: https://www.imdb.com/list/ls009545302/
+    url_poster: https://theposterdb.com/api/assets/105488
+
+  Jurassic Park:
+    template: {name: collection}
+    trakt_list: https://trakt.tv/users/krissykk/lists/jurassic-park-collection-official-list
+    url_poster: https://theposterdb.com/api/assets/17151
+
+  LEGO:
+    template: {name: collection}
+    tmdb_collection: 1004630
+    imdb_list: https://www.imdb.com/list/ls075033283/
+    trakt_list: 
+      - https://trakt.tv/users/arachn0id/lists/lego-movies-tv-series
+      - https://trakt.tv/users/dillerface/lists/lego-marvel
+      - https://trakt.tv/users/pandali/lists/lego-world
+    url_poster: https://theposterdb.com/api/assets/11979
+
+  Living Dead:
+    template: {name: collection}
+    imdb_list: https://www.imdb.com/list/ls566356113
+    url_poster: https://theposterdb.com/api/assets/97136
+
+  Mad Max:
+    template: {name: collection}
+    tmdb_collection: 8945
+    url_poster: https://theposterdb.com/api/assets/82934
+
+  Marvel:
+    template: {name: collection}
+    trakt_list:
+      - https://trakt.tv/users/martheo/lists/marvel
+      - https://trakt.tv/users/arachn0id/lists/marvel-animated
+      - https://trakt.tv/lists/official/lego-marvel-super-heroes-collection
+    mdblist_list: https://mdblist.com/lists/k0meta/external/15110
+    url_poster: https://theposterdb.com/api/assets/81748
+
+  Mexico Trilogy:
+    template: {name: collection}
+    tmdb_collection: 9649
+    url_poster: https://www.themoviedb.org/t/p/original/qmPhILSFQKaRyc81mVJWl05tHai.jpg
+
+  Halloween:
+    template: {name: collection}
+    tmdb_collection: 
+      - 91361
+      - 126209
+    url_poster: https://theposterdb.com/api/assets/161050
+
+  Millennium:
+    template: {name: collection}
+    tmdb_collection: 
+      - 24761
+      - 575987
+    url_poster: https://theposterdb.com/api/assets/87824
+
+  Minions:
+    template: {name: collection}
+    tmdb_collection: 86066
+    imdb_list: https://www.imdb.com/list/ls056882814/
+    url_poster: https://theposterdb.com/api/assets/168545
+
+  Monty Python:
+    template: {name: collection}
+    imdb_list: https://www.imdb.com/list/ls072012494/
+    url_poster: https://theposterdb.com/api/assets/9558
+
+  Narnia:
+    template: {name: collection}
+    tmdb_collection: 420
+    url_poster: https://theposterdb.com/api/assets/9566
+
+  National Lampoon's:
+    template: {name: collection}
+    tmdb_collection: 108693
+    trakt_list: https://trakt.tv/users/bruinschris/lists/national-lampoon-s-vacation-series
+    imdb_id: tt1600409
+    url_poster: https://theposterdb.com/api/assets/68744
+
+  Planet of the Apes:
+    template: {name: collection}
+    tmdb_collection:
+      - 1709
+      - 173710
+    url_poster: https://theposterdb.com/api/assets/34095
+
+  Rambo:
+    template: {name: collection}
+    tmdb_collection: 5039
+    url_poster: https://theposterdb.com/api/assets/15424
+
+  Robert Langdon:
+    template: {name: collection}
+    tmdb_collection: 115776
+    url_poster: https://theposterdb.com/api/assets/19449
+
+  Rocky:
+    template: {name: collection}
+    tmdb_collection:
+      - 1575
+      - 553717
+    url_poster: https://theposterdb.com/api/assets/40086
+
+  Shrek:
+    template: {name: collection}
+    trakt_list: https://trakt.tv/users/nukeproof1333/lists/shrek-universe
+    imdb_id: tt2486724
+    url_poster: https://theposterdb.com/api/assets/95301
+
+  Terminator:
+    template: {name: collection}
+    tmdb_collection: 528
+    url_poster: https://theposterdb.com/api/assets/132925
+
+  TMNT:
+    template: {name: collection}
+    trakt_list: https://trakt.tv/users/yoru14/lists/teenage-mutant-ninja-turtles
+    url_poster: https://theposterdb.com/api/assets/5169
+
+  Transformers:
+    template: {name: collection}
+    imdb_list: https://www.imdb.com/list/ls058280509/
+    url_poster: https://theposterdb.com/api/assets/159630
+
+  Jack Ryan:
+    template: {name: collection}
+    imdb_list: https://www.imdb.com/list/ls070771796/
+    url_poster: https://theposterdb.com/api/assets/150542
+
+  MonsterVerse:
+    template: {name: collection}
+    imdb_list: https://www.imdb.com/list/ls088043925/
+    url_poster: https://theposterdb.com/api/assets/478509

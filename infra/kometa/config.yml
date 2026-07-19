@@ -1,0 +1,321 @@
+## This file is a template remove the .template to use the file
+
+libraries:                       # This is called out once within the config.yml file
+  Movies:                        # These are names of libraries in your Plex
+    collection_files:
+    - pmm: basic                 # This is a file within PMM's defaults folder
+    - pmm: imdb                  # This is a file within PMM's defaults folder
+    - pmm: oscars
+    - pmm: tautulli
+    - pmm: seasonal
+      template_variables:
+        use_separator: false
+        collection_order: release
+        schedule_easter: range(03/25-04/15)
+        schedule_mother: range(05/01-05/14)
+        imdb_list_mother: https://www.imdb.com/list/ls564625063/
+        imdb_list_father: https://www.imdb.com/list/ls569166431/
+        schedule_independence: range(07/01-07/11)
+        imdb_list_independence: https://www.imdb.com/list/ls561696381/
+        imdb_list_halloween: https://www.imdb.com/list/ls000091321/
+        imdb_list_thanksgiving: https://www.imdb.com/list/ls054121890/
+
+        append_data:
+          pride: Pride Month
+          beach: Beach
+        schedule_pride: range(06/01-06/30)
+        imdb_list_pride: https://www.imdb.com/list/ls520741475/
+        emoji_pride: '🌈 '
+        schedule_beach: range(08/01-08/31)
+        imdb_list_beach: https://www.imdb.com/list/ls090132387/
+        emoji_beach: '🏖️ '
+    - pmm: universe
+      template_variables:
+        use_separator: false
+        collection_order: release
+        minimum_items: 3
+        exclude:
+        - marvel
+        - rocky
+        imdb_list_star: https://www.imdb.com/list/ls072034866/
+        trakt_list_star:
+        - https://trakt.tv/users/feeltheduck/lists/star-wars-collection
+        - https://trakt.tv/users/pierredurrr/lists/lego-star-wars-saga
+        trakt_list_xmen: https://trakt.tv/users/pandako/lists/x-men-cinematic-universe
+        imdb_list_trek: https://www.imdb.com/list/ls062347197/
+        imdb_list_avp: https://www.imdb.com/list/ls064969885/
+        url_poster_avp: https://theposterdb.com/api/assets/43452
+        url_poster_fast: https://theposterdb.com/api/assets/226833
+        url_poster_middle: https://theposterdb.com/api/assets/191460
+        url_poster_askew: https://theposterdb.com/api/assets/75075
+        url_poster_wizard: https://theposterdb.com/api/assets/166278
+        url_poster_xmen: https://theposterdb.com/api/assets/10
+        url_poster_star: https://theposterdb.com/api/assets/58758
+        url_poster_trek: https://theposterdb.com/api/assets/62523
+        url_poster_mcu: https://theposterdb.com/api/assets/9220
+        url_poster_mummy: https://theposterdb.com/api/assets/67099
+
+    - file: config/collections.yml
+      # see the wiki for how to use local files, folders, URLs, or files from git
+    overlay_files:
+    - remove_overlays: false     # Set this to true to remove all overlays
+    - pmm: resolution
+    - pmm: ratings
+      template_variables:
+        rating1: audience
+        rating1_image: rt_tomato
+        horizontal_position: right
+        vertical_position: bottom
+    - pmm: commonsense
+      template_variables:
+        horizontal_offset: 15
+        vertical_offset: 15
+        horizontal_align: left
+        vertical_align: bottom
+    operations:
+      mass_audience_rating_update: mdb_tomatoesaudience
+      # see the wiki for how to use local files, folders, URLs, or files from git
+    radarr:                          # Can be individually specified per library as well
+      url: http://172.20.20.250:7878
+      token: 43cf5825660042d4ab2e19e2a23f9e01
+      add_missing: false
+      add_existing: true
+      root_folder_path: /movies
+      monitor: true
+      availability: released
+      quality_profile: 1080p
+      tag: pmm
+      search: false
+      radarr_path: /movies
+      plex_path: /home/plex/sorted/Movies
+      upgrade_existing: true
+      ignore_cache: false
+  TV Shows:
+    collection_files:
+    - pmm: basic               # This is a file within PMM's defaults folder
+    - pmm: imdb                # This is a file within PMM's defaults folder
+    - pmm: emmy
+    - pmm: tautulli
+      # see the wiki for how to use local files, folders, URLs, or files from git
+    overlay_files:
+    - remove_overlays: false   # Set this to true to remove all overlays
+    - pmm: resolution
+    - pmm: streaming
+      template_variables:
+        horizontal_offset: 15
+        horizontal_align: right
+        vertical_offset: 15
+        vertical_align: top
+    - pmm: ratings
+      template_variables:
+        rating1: audience
+        rating1_image: rt_tomato
+        horizontal_position: right
+        vertical_position: bottom
+    - pmm: commonsense
+      template_variables:
+        horizontal_offset: 15
+        vertical_offset: 15
+        horizontal_align: left
+        vertical_align: bottom
+    operations:
+      mass_audience_rating_update: mdb_trakt
+      mass_episode_audience_rating_update: tmdb
+      # see the wiki for how to use local files, folders, URLs, or files from git
+    sonarr:                          # Can be individually specified per library as well
+      url: http://172.20.20.250:8989
+      token: c24bdd992ad84d63907909cd128f034c
+      add_missing: false
+      add_existing: false
+      root_folder_path: /tv
+      monitor: none
+      quality_profile: 1080p
+      language_profile: English
+      series_type: standard
+      season_folder: false
+      tag: pmm
+      search: false
+      cutoff_search: false
+      sonarr_path:
+      plex_path: /home/plex/sorted/TV Shows
+      upgrade_existing: false
+      ignore_cache: false
+  Pre:
+    collection_files:
+    - pmm: basic               # This is a file within PMM's defaults folder
+    - pmm: imdb                # This is a file within PMM's defaults folder
+      # see the wiki for how to use local files, folders, URLs, or files from git
+    overlay_files:
+    - remove_overlays: false     # Set this to true to remove all overlays
+    - pmm: resolution
+    - pmm: ratings
+      template_variables:
+        rating1: audience
+        rating1_image: rt_tomato
+        horizontal_position: right
+        vertical_position: bottom
+    - file: config/premovies.yml
+    - pmm: commonsense
+      template_variables:
+        horizontal_offset: 15
+        vertical_offset: 15
+        horizontal_align: left
+        vertical_align: bottom
+    operations:
+      mass_audience_rating_update: mdb_tomatoesaudience
+      # see the wiki for how to use local files, folders, URLs, or files from git
+    radarr:                          # Can be individually specified per library as well
+      url: http://172.20.20.250:7879
+      token: b19ad0a142c6406391c1ba3382fae8c6
+      add_missing: false
+      add_existing: false
+      root_folder_path: /movies
+      monitor: none
+      availability: announced
+      quality_profile: Any
+      tag: pmm
+      search: false
+      radarr_path:
+      plex_path: /home/plex/sorted/Pre
+      upgrade_existing: false
+      ignore_cache: false
+  3D Movies:
+    collection_files:
+    - pmm: basic               # This is a file within PMM's defaults folder
+    - pmm: imdb                # This is a file within PMM's defaults folder
+      # see the wiki for how to use local files, folders, URLs, or files from git
+    overlay_files:
+    - remove_overlays: false     # Set this to true to remove all overlays
+    - pmm: resolution
+    - pmm: ratings
+      template_variables:
+        rating1: audience
+        rating1_image: rt_tomato
+        horizontal_position: right
+        vertical_position: bottom
+    - pmm: commonsense
+      template_variables:
+        horizontal_offset: 15
+        vertical_offset: 15
+        horizontal_align: left
+        vertical_align: bottom
+    - file: config/3dmovies.yml
+    operations:
+      mass_audience_rating_update: mdb_tomatoesaudience
+      # see the wiki for how to use local files, folders, URLs, or files from git
+  Music:
+    collection_files:
+    - file: config/Music.yml   # This is a local file THAT YOU MIGHT CREATE
+playlist_files:
+- pmm: playlist                  # This is a file within PMM's defaults folder
+  template_variables:
+    use_pokemon: false
+  # see the wiki for how to use local files, folders, URLs, or files from git
+settings:
+  cache: true
+  cache_expiration: 60
+  asset_directory: config/assets
+  asset_folders: true
+  asset_depth: 0
+  create_asset_folders: false
+  prioritize_assets: false
+  dimensional_asset_rename: false
+  download_url_assets: false
+  show_missing_season_assets: false
+  show_missing_episode_assets: false
+  show_asset_not_needed: true
+  sync_mode: append
+  minimum_items: 1
+  default_collection_order:
+  delete_below_minimum: true
+  delete_not_scheduled: false
+  run_again_delay: 2
+  missing_only_released: false
+  only_filter_missing: false
+  show_unmanaged: true
+  show_unconfigured: true
+  show_filtered: false
+  show_options: false
+  show_missing: true
+  show_missing_assets: true
+  save_report: false
+  tvdb_language: eng
+  ignore_ids:
+  ignore_imdb_ids:
+  item_refresh_delay: 0
+  playlist_sync_to_user: all
+  playlist_exclude_users:
+  playlist_report: false
+  verify_ssl: true
+  custom_repo:
+  check_nightly: false
+  run_order:
+  - operations
+  - metadata
+  - collections
+  - overlays
+  overlay_artwork_filetype: jpg
+  overlay_artwork_quality:
+  show_unfiltered: false
+  auto_sort_hubs:
+webhooks:                        # Can be individually specified per library as well
+  error:
+  version:
+  run_start:
+  run_end:
+  changes:
+  delete:
+plex:                            # Can be individually specified per library as well; REQUIRED for the script to run
+  url: http://172.20.20.250:32400
+  token: xSG_TDX_Jiz2EbF_xDas
+  timeout: 60
+  clean_bundles: false
+  empty_trash: false
+  optimize: false
+  db_cache:
+  verify_ssl:
+tmdb:                            # REQUIRED for the script to run
+  apikey: 989a4e901f2e62ec566e7c4f74c2aa12
+  language: en
+  cache_expiration: 60
+  region:
+tautulli:                        # Can be individually specified per library as well
+  url: http://172.20.20.250:8181
+  apikey: aede1ebc2ea746bbac7179748e68abeb
+omdb:
+  apikey: 5d6514d2
+  cache_expiration: 60
+mdblist:
+  apikey: fbozo8od15jy1vkdzmv4fc025
+  cache_expiration: 60
+notifiarr:
+  apikey: ####################################
+anidb:                           # Not required for AniDB builders unless you want mature content
+  username: ######
+  password: ######
+  language: en
+  client:
+  enable_mature: false
+  cache_expiration: 60
+trakt:
+  client_id: 8eded74f5ff0e2aca9308707b4235bd83954badc616e625bf022bcc69226884f
+  client_secret: c20b07c47d9014906427e3c66b2abf5c96d14f3f25e23bfbfe9bbd260bbcc612
+  pin:
+  authorization:
+    # everything below is autofilled by the script
+    access_token: 13bbb25f727747713d0bc6e27cc9a49bb96cfac88e4fa56adfd0d4d08c5c0d77
+    token_type: Bearer
+    expires_in: 86400
+    refresh_token: fc88fa3007edab35aea668bd57be3f48eb125585b6bdde3b6c520087b43ed98e
+    scope: public
+    created_at: 1761037615
+  force_refresh:
+mal:
+  client_id: ####################
+  client_secret: ####################
+  authorization:
+    # everything below is autofilled by the script
+    access_token:
+    token_type:
+    expires_in:
+    refresh_token:
