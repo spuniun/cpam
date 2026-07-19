@@ -139,7 +139,12 @@ def post_webhook(payload: dict, files: list) -> None:
     req = urllib.request.Request(
         url,
         data=body,
-        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
+        headers={
+            "Content-Type": f"multipart/form-data; boundary={boundary}",
+            # Cloudflare fronts discord.com and 403s (error 1010) the default
+            # Python-urllib user agent
+            "User-Agent": "cpam-monthly-stats/1.0 (+https://cpam.tv)",
+        },
         method="POST",
     )
     try:
