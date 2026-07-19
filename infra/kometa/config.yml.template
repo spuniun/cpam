@@ -1,13 +1,18 @@
-## This file is a template remove the .template to use the file
+## Sanitized reference for the real config.yml (gitignored — holds live secrets).
+## To deploy changes: apply them to the local config.yml, then copy it to
+## /var/lib/plexmediaserver/.config/plex-meta-manager/config/config.yml on the server.
+## Keep this template structurally identical to config.yml; only the
+## REPLACE_WITH_* values differ. Note: Kometa rewrites the trakt.authorization
+## block at runtime (token refresh), so the server copy always drifts there.
 
-libraries:                       # This is called out once within the config.yml file
-  Movies:                        # These are names of libraries in your Plex
+libraries:
+  Movies:
     collection_files:
-    - pmm: basic                 # This is a file within PMM's defaults folder
-    - pmm: imdb                  # This is a file within PMM's defaults folder
-    - pmm: oscars
-    - pmm: tautulli
-    - pmm: seasonal
+    - default: basic
+    - default: imdb
+    - default: oscars
+    - default: tautulli
+    - default: seasonal
       template_variables:
         use_separator: false
         collection_order: release
@@ -29,7 +34,7 @@ libraries:                       # This is called out once within the config.yml
         schedule_beach: range(08/01-08/31)
         imdb_list_beach: https://www.imdb.com/list/ls090132387/
         emoji_beach: '🏖️ '
-    - pmm: universe
+    - default: universe
       template_variables:
         use_separator: false
         collection_order: release
@@ -56,17 +61,16 @@ libraries:                       # This is called out once within the config.yml
         url_poster_mummy: https://theposterdb.com/api/assets/67099
 
     - file: config/collections.yml
-      # see the wiki for how to use local files, folders, URLs, or files from git
     overlay_files:
     - remove_overlays: false     # Set this to true to remove all overlays
-    - pmm: resolution
-    - pmm: ratings
+    - default: resolution
+    - default: ratings
       template_variables:
         rating1: audience
         rating1_image: rt_tomato
         horizontal_position: right
         vertical_position: bottom
-    - pmm: commonsense
+    - default: commonsense
       template_variables:
         horizontal_offset: 15
         vertical_offset: 15
@@ -74,10 +78,9 @@ libraries:                       # This is called out once within the config.yml
         vertical_align: bottom
     operations:
       mass_audience_rating_update: mdb_tomatoesaudience
-      # see the wiki for how to use local files, folders, URLs, or files from git
-    radarr:                          # Can be individually specified per library as well
+    radarr:
       url: http://172.20.20.250:7878
-      token: 43cf5825660042d4ab2e19e2a23f9e01
+      token: REPLACE_WITH_RADARR_API_KEY
       add_missing: false
       add_existing: true
       root_folder_path: /movies
@@ -88,31 +91,30 @@ libraries:                       # This is called out once within the config.yml
       search: false
       radarr_path: /movies
       plex_path: /home/plex/sorted/Movies
-      upgrade_existing: true
+      upgrade_existing: false
       ignore_cache: false
   TV Shows:
     collection_files:
-    - pmm: basic               # This is a file within PMM's defaults folder
-    - pmm: imdb                # This is a file within PMM's defaults folder
-    - pmm: emmy
-    - pmm: tautulli
-      # see the wiki for how to use local files, folders, URLs, or files from git
+    - default: basic
+    - default: imdb
+    - default: emmy
+    - default: tautulli
     overlay_files:
     - remove_overlays: false   # Set this to true to remove all overlays
-    - pmm: resolution
-    - pmm: streaming
+    - default: resolution
+    - default: streaming
       template_variables:
         horizontal_offset: 15
         horizontal_align: right
         vertical_offset: 15
         vertical_align: top
-    - pmm: ratings
+    - default: ratings
       template_variables:
         rating1: audience
         rating1_image: rt_tomato
         horizontal_position: right
         vertical_position: bottom
-    - pmm: commonsense
+    - default: commonsense
       template_variables:
         horizontal_offset: 15
         vertical_offset: 15
@@ -121,10 +123,9 @@ libraries:                       # This is called out once within the config.yml
     operations:
       mass_audience_rating_update: mdb_trakt
       mass_episode_audience_rating_update: tmdb
-      # see the wiki for how to use local files, folders, URLs, or files from git
-    sonarr:                          # Can be individually specified per library as well
+    sonarr:
       url: http://172.20.20.250:8989
-      token: c24bdd992ad84d63907909cd128f034c
+      token: REPLACE_WITH_SONARR_API_KEY
       add_missing: false
       add_existing: false
       root_folder_path: /tv
@@ -136,26 +137,26 @@ libraries:                       # This is called out once within the config.yml
       tag: pmm
       search: false
       cutoff_search: false
-      sonarr_path:
-      plex_path: /home/plex/sorted/TV Shows
+      # sonarr mounts /home/plex/sorted/TV as /tv (see arrs/docker-compose.yml)
+      sonarr_path: /tv
+      plex_path: /home/plex/sorted/TV
       upgrade_existing: false
       ignore_cache: false
   Pre:
     collection_files:
-    - pmm: basic               # This is a file within PMM's defaults folder
-    - pmm: imdb                # This is a file within PMM's defaults folder
-      # see the wiki for how to use local files, folders, URLs, or files from git
+    - default: basic
+    - default: imdb
     overlay_files:
     - remove_overlays: false     # Set this to true to remove all overlays
-    - pmm: resolution
-    - pmm: ratings
+    - default: resolution
+    - default: ratings
       template_variables:
         rating1: audience
         rating1_image: rt_tomato
         horizontal_position: right
         vertical_position: bottom
     - file: config/premovies.yml
-    - pmm: commonsense
+    - default: commonsense
       template_variables:
         horizontal_offset: 15
         vertical_offset: 15
@@ -163,10 +164,9 @@ libraries:                       # This is called out once within the config.yml
         vertical_align: bottom
     operations:
       mass_audience_rating_update: mdb_tomatoesaudience
-      # see the wiki for how to use local files, folders, URLs, or files from git
-    radarr:                          # Can be individually specified per library as well
+    radarr:
       url: http://172.20.20.250:7879
-      token: b19ad0a142c6406391c1ba3382fae8c6
+      token: REPLACE_WITH_PRERADARR_API_KEY
       add_missing: false
       add_existing: false
       root_folder_path: /movies
@@ -175,25 +175,25 @@ libraries:                       # This is called out once within the config.yml
       quality_profile: Any
       tag: pmm
       search: false
-      radarr_path:
+      # preradarr mounts /home/plex/sorted/Pre as /movies (see arrs/docker-compose.yml)
+      radarr_path: /movies
       plex_path: /home/plex/sorted/Pre
       upgrade_existing: false
       ignore_cache: false
   3D Movies:
     collection_files:
-    - pmm: basic               # This is a file within PMM's defaults folder
-    - pmm: imdb                # This is a file within PMM's defaults folder
-      # see the wiki for how to use local files, folders, URLs, or files from git
+    - default: basic
+    - default: imdb
     overlay_files:
     - remove_overlays: false     # Set this to true to remove all overlays
-    - pmm: resolution
-    - pmm: ratings
+    - default: resolution
+    - default: ratings
       template_variables:
         rating1: audience
         rating1_image: rt_tomato
         horizontal_position: right
         vertical_position: bottom
-    - pmm: commonsense
+    - default: commonsense
       template_variables:
         horizontal_offset: 15
         vertical_offset: 15
@@ -202,15 +202,10 @@ libraries:                       # This is called out once within the config.yml
     - file: config/3dmovies.yml
     operations:
       mass_audience_rating_update: mdb_tomatoesaudience
-      # see the wiki for how to use local files, folders, URLs, or files from git
-  Music:
-    collection_files:
-    - file: config/Music.yml   # This is a local file THAT YOU MIGHT CREATE
 playlist_files:
-- pmm: playlist                  # This is a file within PMM's defaults folder
+- default: playlist
   template_variables:
     use_pokemon: false
-  # see the wiki for how to use local files, folders, URLs, or files from git
 settings:
   cache: true
   cache_expiration: 60
@@ -259,15 +254,19 @@ settings:
   show_unfiltered: false
   auto_sort_hubs:
 webhooks:                        # Can be individually specified per library as well
-  error:
+  error: apprise
   version:
   run_start:
   run_end:
   changes:
   delete:
+apprise:
+  # Routes webhooks to Pushover; apprise.yml lives next to this file in the
+  # kometa config dir (see apprise.yml.template)
+  config: /config/apprise.yml
 plex:                            # Can be individually specified per library as well; REQUIRED for the script to run
   url: http://172.20.20.250:32400
-  token: xSG_TDX_Jiz2EbF_xDas
+  token: REPLACE_WITH_PLEX_TOKEN
   timeout: 60
   clean_bundles: false
   empty_trash: false
@@ -275,47 +274,28 @@ plex:                            # Can be individually specified per library as 
   db_cache:
   verify_ssl:
 tmdb:                            # REQUIRED for the script to run
-  apikey: 989a4e901f2e62ec566e7c4f74c2aa12
+  apikey: REPLACE_WITH_TMDB_API_KEY
   language: en
   cache_expiration: 60
   region:
 tautulli:                        # Can be individually specified per library as well
   url: http://172.20.20.250:8181
-  apikey: aede1ebc2ea746bbac7179748e68abeb
+  apikey: REPLACE_WITH_TAUTULLI_API_KEY
 omdb:
-  apikey: 5d6514d2
+  apikey: REPLACE_WITH_OMDB_API_KEY
   cache_expiration: 60
 mdblist:
-  apikey: fbozo8od15jy1vkdzmv4fc025
-  cache_expiration: 60
-notifiarr:
-  apikey: ####################################
-anidb:                           # Not required for AniDB builders unless you want mature content
-  username: ######
-  password: ######
-  language: en
-  client:
-  enable_mature: false
-  cache_expiration: 60
+  apikey: REPLACE_WITH_MDBLIST_API_KEY
 trakt:
-  client_id: 8eded74f5ff0e2aca9308707b4235bd83954badc616e625bf022bcc69226884f
-  client_secret: c20b07c47d9014906427e3c66b2abf5c96d14f3f25e23bfbfe9bbd260bbcc612
+  client_id: REPLACE_WITH_TRAKT_CLIENT_ID
+  client_secret: REPLACE_WITH_TRAKT_CLIENT_SECRET
   pin:
-  authorization:
-    # everything below is autofilled by the script
-    access_token: 13bbb25f727747713d0bc6e27cc9a49bb96cfac88e4fa56adfd0d4d08c5c0d77
-    token_type: Bearer
-    expires_in: 86400
-    refresh_token: fc88fa3007edab35aea668bd57be3f48eb125585b6bdde3b6c520087b43ed98e
-    scope: public
-    created_at: 1761037615
-  force_refresh:
-mal:
-  client_id: ####################
-  client_secret: ####################
   authorization:
     # everything below is autofilled by the script
     access_token:
     token_type:
     expires_in:
     refresh_token:
+    scope:
+    created_at:
+  force_refresh:

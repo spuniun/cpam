@@ -14,6 +14,7 @@ repo runs locally — changes take effect only after being pulled to the server.
 | `infra/docker-compose.yml` | Support stack (`cpam-infra`): sabnzbd, tautulli, wizarr, kometa, seerr, audiobot, doplarr, wrapperr, watchtower |
 | `infra/audiobot/` | Custom Discord bot (locally built image): `/audiobooks` mints Wizarr invites for the audiobook library |
 | `infra/doplarr/config.toml` | Config for doplarr_rs, the Discord `/request` bot fronting Seerr |
+| `infra/kometa/` | Kometa collection/overlay configs; `config.yml` + `apprise.yml` are gitignored (secrets) — committed `*.template` files are the reference |
 | `infra/tautulli/monthly_stats.py` | Cron script: posts Tautulli's 30-day most-popular movies/TV to Discord as a compact ranked list (webhook) |
 | `nginx/sites-available/cpam.tv` | All `*.cpam.tv` vhosts (one server block per app) |
 | `nginx/conf-available/` | Shared includes: `common.include` (TLS/headers), `cloudflare.ips`, `theme-park.include`, `letsencrypt.include` |
@@ -75,7 +76,16 @@ what's safe to evict locally, i.e. content already synced to gdrive).
   (SQLite over encfs/union mounts corrupts). Library dirs are mounted read-only —
   the arr apps own writes to media files. Its port is bound to loopback only
   (`127.0.0.1:13378`); it is reached exclusively via nginx (`listen.cpam.tv`).
-- **kometa** has `restart: "no"` on purpose — it's run on demand/scheduled, not a daemon.
+- **kometa** runs as a daemon (`restart: unless-stopped`) and relies on its internal
+  scheduler (daily at 05:00). Its config dir on the server is
+  `/var/lib/plexmediaserver/.config/plex-meta-manager/config/` (legacy PMM name) —
+  deploying config changes means copying the `infra/kometa/` files there; the compose
+  mount is that dir, not the repo. `config.yml` and `apprise.yml` hold live secrets
+  and are gitignored; edit them alongside the committed `*.template` twins and keep
+  both in sync. Kometa also rewrites `config.yml` itself (Trakt token refresh), so
+  the server copy legitimately drifts in the `trakt.authorization` block. Run errors
+  push to Pushover via Kometa's bundled Apprise (`webhooks.error: apprise` →
+  `apprise.yml` with a `pover://` URL).
 - **watchtower** auto-updates all containers daily at 4am and prunes old images.
 - **wrapperr** has a known TODO: its config volume mapping (`/opt/wrapperr:/app/config`)
   must exist before cutover (see inline `FIX` comment).
@@ -149,3 +159,6 @@ is the only layer, and that's fine.
 - Secrets never go in this repo: no passphrases, tokens, `.env`, or encfs XML config.
   The encfs ciphertext directory names in `syncclouds.sh` are fine to commit.
 - Commit messages are short and lower-case, matching existing history.
+- Line endings are LF everywhere, enforced by `.gitattributes` (`* text=auto eol=lf`) —
+  the server is Linux and CRLF breaks shell scripts. The Windows-side editor may
+  CRLF the working tree; git normalizes on commit, so don't hand-convert.

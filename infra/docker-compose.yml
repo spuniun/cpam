@@ -54,7 +54,9 @@ services:
       - TZ=${TZ:-America/New_York}
     volumes:
       - /var/lib/plexmediaserver/.config/plex-meta-manager/config:/config
-    restart: "no"
+    # Daemon mode: kometa's internal scheduler runs daily at 05:00;
+    # unless-stopped survives reboots/crashes so runs don't silently stop
+    restart: unless-stopped
 
   seerr:
     image: seerr/seerr:latest
