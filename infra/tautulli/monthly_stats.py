@@ -127,7 +127,7 @@ def main() -> None:
 
     post_webhook(
         {
-            "content": f"## 📊 Most popular on CPAM — last {DAYS} days",
+            "content": f"## 📊 Most popular on CPAM® — last {DAYS} days",
             "embeds": embeds,
         }
     )
