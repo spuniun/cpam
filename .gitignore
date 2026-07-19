@@ -5,9 +5,8 @@
 *.pem
 .htpasswd
 encfs6.xml
-# Kometa live configs hold API keys/tokens; edit from the committed *.template files
+# Kometa live config holds API keys/tokens; edit from the committed template
 infra/kometa/config.yml
-infra/kometa/apprise.yml
 
 # Runtime state and logs (these live on the server, not in git)
 *.log

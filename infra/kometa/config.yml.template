@@ -1,9 +1,10 @@
-## Sanitized reference for the real config.yml (gitignored — holds live secrets).
-## To deploy changes: apply them to the local config.yml, then copy it to
-## /var/lib/plexmediaserver/.config/plex-meta-manager/config/config.yml on the server.
-## Keep this template structurally identical to config.yml; only the
-## REPLACE_WITH_* values differ. Note: Kometa rewrites the trakt.authorization
-## block at runtime (token refresh), so the server copy always drifts there.
+## Sanitized reference for the live config.yml, which holds secrets and exists
+## ONLY on the server at
+## /var/lib/plexmediaserver/.config/plex-meta-manager/config/config.yml
+## (it is gitignored here — never add it to this repo). Apply structural changes
+## to both this template and the server copy; only the REPLACE_WITH_* values
+## differ. Note: Kometa rewrites the trakt.authorization block at runtime
+## (token refresh), so the server copy always drifts there.
 
 libraries:
   Movies:
@@ -253,17 +254,15 @@ settings:
   overlay_artwork_quality:
   show_unfiltered: false
   auto_sort_hubs:
+# Run-error notifications happen outside kometa: error_digest.py (host cron)
+# parses logs/meta.log after each run and sends one Pushover digest.
 webhooks:                        # Can be individually specified per library as well
-  error: apprise
+  error:
   version:
   run_start:
   run_end:
   changes:
   delete:
-apprise:
-  # Routes webhooks to Pushover; apprise.yml lives next to this file in the
-  # kometa config dir (see apprise.yml.template)
-  config: /config/apprise.yml
 plex:                            # Can be individually specified per library as well; REQUIRED for the script to run
   url: http://172.20.20.250:32400
   token: REPLACE_WITH_PLEX_TOKEN

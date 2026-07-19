@@ -14,7 +14,7 @@ repo runs locally — changes take effect only after being pulled to the server.
 | `infra/docker-compose.yml` | Support stack (`cpam-infra`): sabnzbd, tautulli, wizarr, kometa, seerr, audiobot, doplarr, wrapperr, watchtower |
 | `infra/audiobot/` | Custom Discord bot (locally built image): `/audiobooks` mints Wizarr invites for the audiobook library |
 | `infra/doplarr/config.toml` | Config for doplarr_rs, the Discord `/request` bot fronting Seerr |
-| `infra/kometa/` | Kometa collection/overlay configs; `config.yml` + `apprise.yml` are gitignored (secrets) — committed `*.template` files are the reference |
+| `infra/kometa/` | Kometa collection/overlay configs + `error_digest.py` (daily Pushover digest of run errors); the live `config.yml` holds secrets and exists only on the server — `config.yml.template` is the committed reference |
 | `infra/tautulli/monthly_stats.py` | Cron script: posts Tautulli's 30-day most-popular movies/TV to Discord as a compact ranked list (webhook) |
 | `nginx/sites-available/cpam.tv` | All `*.cpam.tv` vhosts (one server block per app) |
 | `nginx/conf-available/` | Shared includes: `common.include` (TLS/headers), `cloudflare.ips`, `theme-park.include`, `letsencrypt.include` |
@@ -57,7 +57,8 @@ what's safe to evict locally, i.e. content already synced to gdrive).
 - `.env` on the server is **not** committed (and is gitignored). It currently must
   provide: `PUID`, `PGID`, `TZ` (optional), `AUDIOBOT_DISCORD_TOKEN`, `CPAM_GUILD_ID`,
   `AUDIOBOT_CHANNEL_ID`, `WIZARR_API_KEY`, `DOPLARR_DISCORD_TOKEN`, `SEERR_API_KEY`,
-  `TAUTULLI_API_KEY`, `STATS_WEBHOOK_URL` (Discord webhook — treat as a secret).
+  `TAUTULLI_API_KEY`, `STATS_WEBHOOK_URL` (Discord webhook — treat as a secret),
+  `PUSHOVER_APP_TOKEN`, `PUSHOVER_USER_KEY` (kometa error digest).
   Don't hardcode UIDs or secrets into the compose files.
 - **Host cron** (not compose): `infra/tautulli/monthly_stats.py` runs on the 1st of
   the month, sourcing the same `.env` (`set -a; . .env; set +a`). It fetches
@@ -80,12 +81,17 @@ what's safe to evict locally, i.e. content already synced to gdrive).
   scheduler (daily at 05:00). Its config dir on the server is
   `/var/lib/plexmediaserver/.config/plex-meta-manager/config/` (legacy PMM name) —
   deploying config changes means copying the `infra/kometa/` files there; the compose
-  mount is that dir, not the repo. `config.yml` and `apprise.yml` hold live secrets
-  and are gitignored; edit them alongside the committed `*.template` twins and keep
-  both in sync. Kometa also rewrites `config.yml` itself (Trakt token refresh), so
-  the server copy legitimately drifts in the `trakt.authorization` block. Run errors
-  push to Pushover via Kometa's bundled Apprise (`webhooks.error: apprise` →
-  `apprise.yml` with a `pover://` URL).
+  mount is that dir, not the repo. The live `config.yml` holds secrets and exists
+  **only on the server** (gitignored here, never kept in the working copy);
+  `config.yml.template` is the committed reference — apply structural changes to
+  both. Kometa also rewrites the live config itself (Trakt token refresh), so its
+  `trakt.authorization` block legitimately drifts from the template.
+- **Host cron** (kometa): `infra/kometa/error_digest.py` runs daily after the 05:00
+  kometa run, parses `logs/meta.log`, and sends one Pushover digest of the run's
+  deduped errors — deliberately a single message per run (the per-error webhook
+  would flood the phone), and it doubles as a heartbeat that kometa actually ran.
+  Needs `PUSHOVER_APP_TOKEN`/`PUSHOVER_USER_KEY` from `.env`; `--dry-run` prints
+  instead of sending.
 - **watchtower** auto-updates all containers daily at 4am and prunes old images.
 - **wrapperr** has a known TODO: its config volume mapping (`/opt/wrapperr:/app/config`)
   must exist before cutover (see inline `FIX` comment).
