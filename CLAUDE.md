@@ -14,7 +14,7 @@ repo runs locally — changes take effect only after being pulled to the server.
 | `infra/docker-compose.yml` | Support stack (`cpam-infra`): sabnzbd, tautulli, wizarr, kometa, seerr, audiobot, doplarr, wrapperr, watchtower |
 | `infra/audiobot/` | Custom Discord bot (locally built image): `/audiobooks` mints Wizarr invites for the audiobook library |
 | `infra/doplarr/config.toml` | Config for doplarr_rs, the Discord `/request` bot fronting Seerr |
-| `infra/kometa/` | Kometa collection/overlay configs + `error_digest.py` (daily Pushover digest of run errors); the live `config.yml` holds secrets and exists only on the server — `config.yml.template` is the committed reference |
+| `infra/kometa/` | Kometa configs (fully committed — `config.yml` uses `<<name>>` Config Secret markers, secrets live in server `.env` as `KOMETA_*`), `deploy.sh` (copy to live config dir), `error_digest.py` (daily Pushover digest of run errors) |
 | `infra/tautulli/monthly_stats.py` | Cron script: posts Tautulli's 30-day most-popular movies/TV to Discord as a compact ranked list (webhook) |
 | `nginx/sites-available/cpam.tv` | All `*.cpam.tv` vhosts (one server block per app) |
 | `nginx/conf-available/` | Shared includes: `common.include` (TLS/headers), `cloudflare.ips`, `theme-park.include`, `letsencrypt.include` |
@@ -58,7 +58,10 @@ what's safe to evict locally, i.e. content already synced to gdrive).
   provide: `PUID`, `PGID`, `TZ` (optional), `AUDIOBOT_DISCORD_TOKEN`, `CPAM_GUILD_ID`,
   `AUDIOBOT_CHANNEL_ID`, `WIZARR_API_KEY`, `DOPLARR_DISCORD_TOKEN`, `SEERR_API_KEY`,
   `TAUTULLI_API_KEY`, `STATS_WEBHOOK_URL` (Discord webhook — treat as a secret),
-  `PUSHOVER_APP_TOKEN`, `PUSHOVER_USER_KEY` (kometa error digest).
+  `PUSHOVER_APP_TOKEN`, `PUSHOVER_USER_KEY` (kometa error digest), and the kometa
+  Config Secrets: `KOMETA_PLEXTOKEN`, `KOMETA_TMDBKEY`, `KOMETA_TAUTULLIKEY`,
+  `KOMETA_OMDBKEY`, `KOMETA_MDBLISTKEY`, `KOMETA_RADARRKEY`, `KOMETA_PRERADARRKEY`,
+  `KOMETA_SONARRKEY`, `KOMETA_TRAKTID`, `KOMETA_TRAKTSECRET`.
   Don't hardcode UIDs or secrets into the compose files.
 - **Host cron** (not compose): `infra/tautulli/monthly_stats.py` runs on the 1st of
   the month, sourcing the same `.env` (`set -a; . .env; set +a`). It fetches
@@ -79,13 +82,15 @@ what's safe to evict locally, i.e. content already synced to gdrive).
   (`127.0.0.1:13378`); it is reached exclusively via nginx (`listen.cpam.tv`).
 - **kometa** runs as a daemon (`restart: unless-stopped`) and relies on its internal
   scheduler (daily at 05:00). Its config dir on the server is
-  `/var/lib/plexmediaserver/.config/plex-meta-manager/config/` (legacy PMM name) —
-  deploying config changes means copying the `infra/kometa/` files there; the compose
-  mount is that dir, not the repo. The live `config.yml` holds secrets and exists
-  **only on the server** (gitignored here, never kept in the working copy);
-  `config.yml.template` is the committed reference — apply structural changes to
-  both. Kometa also rewrites the live config itself (Trakt token refresh), so its
-  `trakt.authorization` block legitimately drifts from the template.
+  `/var/lib/plexmediaserver/.config/plex-meta-manager/config/` (legacy PMM name);
+  the compose mount is that dir, not the repo — deploy config changes with
+  `infra/kometa/deploy.sh` after a git pull. The committed `config.yml` contains no
+  secrets: `<<name>>` markers are Kometa **Config Secrets**, resolved at runtime
+  from the `KOMETA_*` env vars the compose file passes in from `.env` (secret names
+  must not contain underscores). The one live-only piece is `trakt.authorization`,
+  which Kometa rewrites on every token refresh — `deploy.sh` carries it forward;
+  clobbering it forces an interactive Trakt PIN re-auth. Never commit a config.yml
+  with real tokens inlined.
 - **Host cron** (kometa): `infra/kometa/error_digest.py` runs daily after the 05:00
   kometa run, parses `logs/meta.log`, and sends one Pushover digest of the run's
   deduped errors — deliberately a single message per run (the per-error webhook

@@ -1,10 +1,9 @@
-## Sanitized reference for the live config.yml, which holds secrets and exists
-## ONLY on the server at
-## /var/lib/plexmediaserver/.config/plex-meta-manager/config/config.yml
-## (it is gitignored here — never add it to this repo). Apply structural changes
-## to both this template and the server copy; only the REPLACE_WITH_* values
-## differ. Note: Kometa rewrites the trakt.authorization block at runtime
-## (token refresh), so the server copy always drifts there.
+## No secrets live in this file — the <<name>> markers are Kometa "Config
+## Secrets", substituted at runtime from KOMETA_<NAME> environment variables
+## (passed into the container by infra/docker-compose.yml from the server .env).
+## Deploy with ./deploy.sh, which copies this into the live config dir and
+## preserves the trakt.authorization block Kometa autofills at runtime.
+## Secret names must not contain underscores (<<my_secret>> won't resolve).
 
 libraries:
   Movies:
@@ -81,7 +80,7 @@ libraries:
       mass_audience_rating_update: mdb_tomatoesaudience
     radarr:
       url: http://172.20.20.250:7878
-      token: REPLACE_WITH_RADARR_API_KEY
+      token: <<radarrkey>>
       add_missing: false
       add_existing: true
       root_folder_path: /movies
@@ -126,7 +125,7 @@ libraries:
       mass_episode_audience_rating_update: tmdb
     sonarr:
       url: http://172.20.20.250:8989
-      token: REPLACE_WITH_SONARR_API_KEY
+      token: <<sonarrkey>>
       add_missing: false
       add_existing: false
       root_folder_path: /tv
@@ -167,7 +166,7 @@ libraries:
       mass_audience_rating_update: mdb_tomatoesaudience
     radarr:
       url: http://172.20.20.250:7879
-      token: REPLACE_WITH_PRERADARR_API_KEY
+      token: <<preradarrkey>>
       add_missing: false
       add_existing: false
       root_folder_path: /movies
@@ -265,7 +264,7 @@ webhooks:                        # Can be individually specified per library as 
   delete:
 plex:                            # Can be individually specified per library as well; REQUIRED for the script to run
   url: http://172.20.20.250:32400
-  token: REPLACE_WITH_PLEX_TOKEN
+  token: <<plextoken>>
   timeout: 60
   clean_bundles: false
   empty_trash: false
@@ -273,24 +272,26 @@ plex:                            # Can be individually specified per library as 
   db_cache:
   verify_ssl:
 tmdb:                            # REQUIRED for the script to run
-  apikey: REPLACE_WITH_TMDB_API_KEY
+  apikey: <<tmdbkey>>
   language: en
   cache_expiration: 60
   region:
 tautulli:                        # Can be individually specified per library as well
   url: http://172.20.20.250:8181
-  apikey: REPLACE_WITH_TAUTULLI_API_KEY
+  apikey: <<tautullikey>>
 omdb:
-  apikey: REPLACE_WITH_OMDB_API_KEY
+  apikey: <<omdbkey>>
   cache_expiration: 60
 mdblist:
-  apikey: REPLACE_WITH_MDBLIST_API_KEY
+  apikey: <<mdblistkey>>
+  cache_expiration: 60
 trakt:
-  client_id: REPLACE_WITH_TRAKT_CLIENT_ID
-  client_secret: REPLACE_WITH_TRAKT_CLIENT_SECRET
+  client_id: <<traktid>>
+  client_secret: <<traktsecret>>
   pin:
   authorization:
-    # everything below is autofilled by the script
+    # Autofilled by kometa in the live copy only; deploy.sh carries the live
+    # values forward — clobbering them forces an interactive Trakt PIN re-auth
     access_token:
     token_type:
     expires_in:

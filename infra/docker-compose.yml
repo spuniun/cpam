@@ -52,6 +52,17 @@ services:
     container_name: kometa
     environment:
       - TZ=${TZ:-America/New_York}
+      # Config Secrets: substituted into config.yml at the <<name>> markers
+      - KOMETA_PLEXTOKEN=${KOMETA_PLEXTOKEN}
+      - KOMETA_TMDBKEY=${KOMETA_TMDBKEY}
+      - KOMETA_TAUTULLIKEY=${KOMETA_TAUTULLIKEY}
+      - KOMETA_OMDBKEY=${KOMETA_OMDBKEY}
+      - KOMETA_MDBLISTKEY=${KOMETA_MDBLISTKEY}
+      - KOMETA_RADARRKEY=${KOMETA_RADARRKEY}
+      - KOMETA_PRERADARRKEY=${KOMETA_PRERADARRKEY}
+      - KOMETA_SONARRKEY=${KOMETA_SONARRKEY}
+      - KOMETA_TRAKTID=${KOMETA_TRAKTID}
+      - KOMETA_TRAKTSECRET=${KOMETA_TRAKTSECRET}
     volumes:
       - /var/lib/plexmediaserver/.config/plex-meta-manager/config:/config
     # Daemon mode: kometa's internal scheduler runs daily at 05:00;
