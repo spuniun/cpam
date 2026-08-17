@@ -61,7 +61,7 @@ what's safe to evict locally, i.e. content already synced to gdrive).
   `PUSHOVER_APP_TOKEN`, `PUSHOVER_USER_KEY` (kometa error digest), and the kometa
   Config Secrets: `KOMETA_PLEXTOKEN`, `KOMETA_TMDBKEY`, `KOMETA_TAUTULLIKEY`,
   `KOMETA_OMDBKEY`, `KOMETA_MDBLISTKEY`, `KOMETA_RADARRKEY`, `KOMETA_PRERADARRKEY`,
-  `KOMETA_SONARRKEY`, `KOMETA_TRAKTID`, `KOMETA_TRAKTSECRET`.
+  `KOMETA_SONARRKEY`. (No `KOMETA_TRAKT*` — Trakt runs in public mode, see below.)
   Don't hardcode UIDs or secrets into the compose files.
 - **Host cron** (not compose): `infra/tautulli/monthly_stats.py` runs on the 1st of
   the month, sourcing the same `.env` (`set -a; . .env; set +a`). It fetches
@@ -81,22 +81,58 @@ what's safe to evict locally, i.e. content already synced to gdrive).
   the arr apps own writes to media files. Its port is bound to loopback only
   (`127.0.0.1:13378`); it is reached exclusively via nginx (`listen.cpam.tv`).
 - **kometa** runs as a daemon (`restart: unless-stopped`) and relies on its internal
-  scheduler (daily at 05:00). Its config dir on the server is
-  `/var/lib/plexmediaserver/.config/plex-meta-manager/config/` (legacy PMM name);
+  scheduler (daily at 05:00). A manual `docker exec kometa python kometa.py …`
+  starts a *second* process against the same `config.cache` SQLite file — check the
+  daemon is idle first (`docker stats --no-stream kometa`, and its stdout tail reads
+  "N Hours until the next run"). Overlapping runs also split the morning across two
+  log files, since `meta.log` only ever holds the most recent run. Restarting the
+  container does not trigger a run; it waits for the schedule. Its config dir on the
+  server is `/var/lib/plexmediaserver/.config/plex-meta-manager/config/` (legacy PMM
+  name);
   the compose mount is that dir, not the repo — deploy config changes with
   `infra/kometa/deploy.sh` after a git pull. The committed `config.yml` contains no
   secrets: `<<name>>` markers are Kometa **Config Secrets**, resolved at runtime
   from the `KOMETA_*` env vars the compose file passes in from `.env` (secret names
-  must not contain underscores). The one live-only piece is `trakt.authorization`,
-  which Kometa rewrites on every token refresh — `deploy.sh` carries it forward;
-  clobbering it forces an interactive Trakt PIN re-auth. Never commit a config.yml
-  with real tokens inlined.
+  must not contain underscores). `deploy.sh` still carries `trakt.authorization`
+  forward from the live copy, but it is empty and unused today. Never commit a
+  config.yml with real tokens inlined.
+- **kometa Trakt is deliberately in public mode.** Trakt deleted a swathe of
+  existing API apps in late July 2026, ours included — the old client id now
+  returns `401 invalid_client`, which broke even unauthenticated list reads, and
+  creating a replacement needs a paid VIP account. `client_id`/`client_secret` are
+  therefore blank, so Kometa falls back to its own public client id. That is
+  sufficient: every Trakt builder here is a public `trakt_list`, which needs only
+  an API key. Do **not** set `client_secret` — Kometa only attempts a token
+  refresh when it is set, and that refresh is what produced the daily "Trakt
+  authorization is invalid" error. Kometa 2.4.8 also removed the in-config `pin:`
+  flow entirely; re-auth now means pasting a block from utilities.kometa.wiki.
+- **Don't set `radarr.add_existing: true`** on the Movies library. It injects
+  `add_existing` into every builder's `item_details`, which makes Kometa reload
+  each item of every collection *and playlist*. Reloading a playlist item drops
+  the `playlistItemID` that Plex only returns on the playlist endpoint; movies
+  survive it (they're already in the per-library reload cache) but episodes do
+  not, so every episode move becomes `PUT /playlists/<id>/items/None/move` → 404.
+  That was 340 errors/run and left the `(Timeline Order)` playlists with movies
+  ordered and episodes stuck where they were appended.
+- **Known upstream failure: the TMDb episode cache wedges.** When TMDb renumbers
+  a show's episodes, the stale row in `config.cache`'s `tmdb_episode_data2` keeps
+  the old numbering while the rebuild claims the same `episode_id`, violating the
+  unique index on `(episode_id, language)`. Kometa logs one CRITICAL and carries
+  on, so it hides easily — but it aborts the whole library-operations phase, which
+  silently stopped part-way through the TV library for days. Fix: stop the
+  container, `DELETE FROM tmdb_episode_data2;` (pure cache, rebuilt on the next
+  run), restart. Expect it to recur whenever TMDb renumbers again.
 - **Host cron** (kometa): `infra/kometa/error_digest.py` runs daily after the 05:00
   kometa run, parses `logs/meta.log`, and sends one Pushover digest of the run's
   deduped errors — deliberately a single message per run (the per-error webhook
   would flood the phone), and it doubles as a heartbeat that kometa actually ran.
-  Needs `PUSHOVER_APP_TOKEN`/`PUSHOVER_USER_KEY` from `.env`; `--dry-run` prints
-  instead of sending.
+  CRITICALs are ranked first (they fire once, so frequency ranking buries them).
+  Error classes that fire every run and that no config change can fix — TVDb-vs-
+  TMDb episode numbering, MDBList gaps, resolution overlays finding no items — are
+  listed in `BENIGN` and collapsed onto one `+N benign` tail line rather than
+  hidden; `--show-benign` lists them individually. Only add a pattern to `BENIGN`
+  after tracing it to its source. Needs `PUSHOVER_APP_TOKEN`/`PUSHOVER_USER_KEY`
+  from `.env`; `--dry-run` prints instead of sending.
 - **watchtower** auto-updates all containers daily at 4am and prunes old images.
 - **wrapperr** has a known TODO: its config volume mapping (`/opt/wrapperr:/app/config`)
   must exist before cutover (see inline `FIX` comment).
