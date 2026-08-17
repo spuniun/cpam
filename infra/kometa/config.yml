@@ -82,7 +82,19 @@ libraries:
       url: http://172.20.20.250:7878
       token: <<radarrkey>>
       add_missing: false
-      add_existing: true
+      # Kept false deliberately. add_existing puts "add_existing" into every
+      # builder's item_details, which makes Kometa reload each item of every
+      # collection AND playlist. Reloading a playlist item re-fetches it from
+      # /library/metadata, which drops the playlistItemID Plex only returns on
+      # the playlist endpoint. Movies survive that (they are already in Kometa's
+      # per-library reload cache, so the cached object is substituted), but
+      # episodes are not cached, so their playlistItemID is wiped in place and
+      # every episode move becomes PUT /playlists/<id>/items/None/move -> 404.
+      # That was 340 errors/run and left the "(Timeline Order)" playlists with
+      # movies ordered correctly and episodes stuck wherever they were appended.
+      # Radarr already holds a superset of the Plex library, so this was a
+      # no-op sync; re-enabling it brings the playlist breakage back.
+      add_existing: false
       root_folder_path: /movies
       monitor: true
       availability: released
@@ -286,12 +298,32 @@ mdblist:
   apikey: <<mdblistkey>>
   cache_expiration: 60
 trakt:
-  client_id: <<traktid>>
-  client_secret: <<traktsecret>>
-  pin:
+  # Both deliberately blank — do NOT put KOMETA_TRAKTID/KOMETA_TRAKTSECRET back.
+  #
+  # Trakt deleted a swathe of existing API apps in late July 2026, ours among
+  # them: the old client id now 401s "client not found", which is why even
+  # unauthenticated list reads started failing (403) and every trakt_list in the
+  # universe collections 404'd. Creating a replacement app needs a paid VIP
+  # account. With client_id blank Kometa falls back to its own public client id
+  # (trakt.py: `params.get("client_id") or _get_public_client_id()`) and logs
+  # "Connecting to Trakt in public mode".
+  #
+  # Public mode is all this config needs: every builder here is a trakt_list
+  # against a public list, and those return 200 with nothing but an API key.
+  # Only the /users/me/* builders (watchlist, collection, ratings, list sync)
+  # require a user token, and none are used.
+  #
+  # client_secret must stay blank too: Kometa only attempts a token refresh
+  # when it is set, and that refresh against the dead app is what produced the
+  # daily "Trakt authorization is invalid" error. Blank means no refresh is
+  # attempted and no authorization is needed at all.
+  client_id:
+  client_secret:
   authorization:
-    # Autofilled by kometa in the live copy only; deploy.sh carries the live
-    # values forward — clobbering them forces an interactive Trakt PIN re-auth
+    # Unused in public mode, and the values Kometa stored here in Oct 2025 are
+    # dead (refresh returns invalid_grant "session not found"). Kept as empty
+    # keys because deploy.sh matches on them to carry a live authorization
+    # forward, should Trakt ever make app creation free again.
     access_token:
     token_type:
     expires_in:
