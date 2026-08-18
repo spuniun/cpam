@@ -10,7 +10,7 @@ repo runs locally — changes take effect only after being pulled to the server.
 
 | Path | Purpose |
 |---|---|
-| `arrs/docker-compose.yml` | Media-management stack (`cpam-arrs`): sonarr, radarr, preradarr, lidarr, listenarr, audiobookshelf |
+| `arrs/docker-compose.yml` | Media-management stack (`cpam-arrs`): sonarr, radarr, preradarr, lidarr, listenarr, audiobookshelf, maintainerr |
 | `infra/docker-compose.yml` | Support stack (`cpam-infra`): sabnzbd, tautulli, wizarr, kometa, seerr, audiobot, doplarr, wrapperr, watchtower |
 | `infra/audiobot/` | Custom Discord bot (locally built image): `/audiobooks` mints Wizarr invites for the audiobook library |
 | `infra/doplarr/config.toml` | Config for doplarr_rs, the Discord `/request` bot fronting Seerr |
@@ -133,6 +133,15 @@ what's safe to evict locally, i.e. content already synced to gdrive).
   hidden; `--show-benign` lists them individually. Only add a pattern to `BENIGN`
   after tracing it to its source. Needs `PUSHOVER_APP_TOKEN`/`PUSHOVER_USER_KEY`
   from `.env`; `--dry-run` prints instead of sending.
+- **maintainerr** (`arrs` stack, :6246) applies retention rules and deletes through the
+  Radarr/Sonarr/Plex/Tautulli **APIs**, never the filesystem — so it gets no
+  `/home/plex/sorted` mount, and the optional leftover-folder cleanup (which would
+  need one) stays off deliberately. Its data dir is
+  `/var/lib/plexmediaserver/.config/Maintainerr` (SQLite → plain local disk). Unlike
+  the lscr.io arrs it takes no `PUID`/`PGID` env; the image runs as
+  `user: ${PUID}:${PGID}`. Radarr/Sonarr are reachable by container name in the same
+  stack, but Plex (`172.20.20.250:32400`) and Seerr/Tautulli (infra stack) must be
+  addressed by host IP + published port.
 - **watchtower** auto-updates all containers daily at 4am and prunes old images.
 - **wrapperr** has a known TODO: its config volume mapping (`/opt/wrapperr:/app/config`)
   must exist before cutover (see inline `FIX` comment).

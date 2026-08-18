@@ -104,6 +104,25 @@ services:
       - cpam-shared
     restart: unless-stopped
 
+  maintainerr:
+    image: ghcr.io/maintainerr/maintainerr:latest
+    container_name: maintainerr
+    # Image runs as the user given here, not PUID/PGID env vars
+    user: "${PUID}:${PGID}"
+    environment:
+      - TZ=${TZ:-America/New_York}
+    volumes:
+      # SQLite state — plain local disk, never the encfs/union mount
+      - /var/lib/plexmediaserver/.config/Maintainerr:/opt/data
+      # Maintainerr deletes through the Radarr/Sonarr/Plex APIs, so it needs no
+      # media mount. Only its optional leftover-folder cleanup does, and that
+      # would mean mounting /home/plex/sorted at the same path the arrs report —
+      # deliberately not done: a delete tool pointed at the union mount while it
+      # is unmounted is exactly the failure mode mnt_plex.sh exists to prevent.
+    ports:
+      - 6246:6246
+    restart: unless-stopped
+
 networks:
   default:
     ipam:
