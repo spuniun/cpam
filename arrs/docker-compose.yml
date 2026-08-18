@@ -120,7 +120,10 @@ services:
       # deliberately not done: a delete tool pointed at the union mount while it
       # is unmounted is exactly the failure mode mnt_plex.sh exists to prevent.
     ports:
-      - 6246:6246
+      # loopback only: no built-in login, and /api/settings/database/download
+      # would hand out the plex token + arr keys. nginx (manage.cpam.tv, behind
+      # a Cloudflare Access policy) is the only route in.
+      - "127.0.0.1:6246:6246"
     restart: unless-stopped
 
 networks:

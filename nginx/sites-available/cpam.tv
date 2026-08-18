@@ -255,6 +255,37 @@ server {
 }
 
 server {
+        server_name manage.cpam.tv;
+        include /etc/nginx/conf.d/common.include;
+        # Maintainerr has NO login of its own, and GET /api/settings/database/download
+        # hands out its entire database — plex token and every arr API key. The auth
+        # layer is a Cloudflare Access policy on this hostname.
+        # Fail closed: Access-authenticated requests always carry this header, so
+        # anything that did not come through Access gets a 403 rather than the app.
+        # A 403 here (instead of the CF login page) means Access is not in front yet.
+        if ($http_cf_access_jwt_assertion = "") {
+                return 403;
+        }
+        location / {
+                proxy_pass              http://127.0.0.1:6246;
+                proxy_redirect          off;
+                proxy_set_header        Host $http_host;
+                proxy_set_header        X-Real-IP $http_cf_connecting_ip;
+                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header        X-Forwarded-Proto $scheme;
+                proxy_set_header        X-Forwarded-Ssl on;
+                proxy_http_version      1.1;
+                # Live logs and task progress are Server-Sent Events
+                # (/api/logs/stream, /api/events/stream). nginx buffers them by
+                # default, which leaves those pages looking frozen. No websockets.
+                proxy_buffering         off;
+                proxy_read_timeout      3600s;
+                set                     $app maintainerr;
+                #include                 /etc/nginx/conf.d/theme-park.include;
+        }
+}
+
+server {
         server_name pods.cpam.tv;
 	include /etc/nginx/conf.d/common.include;
 	root /var/www/podcasts;

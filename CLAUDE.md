@@ -142,6 +142,14 @@ what's safe to evict locally, i.e. content already synced to gdrive).
   `user: ${PUID}:${PGID}`. Radarr/Sonarr are reachable by container name in the same
   stack, but Plex (`172.20.20.250:32400`) and Seerr/Tautulli (infra stack) must be
   addressed by host IP + published port.
+  It has **no login of its own** and `GET /api/settings/database/download` returns the
+  whole database, plex token and arr keys included — so its port is loopback-only and
+  `manage.cpam.tv` is the only route in. Auth is a **Cloudflare Access** policy on that
+  hostname; the vhost additionally refuses any request lacking the
+  `Cf-Access-Jwt-Assertion` header that Access adds, so it fails closed if the policy
+  is ever removed (a bare 403 instead of a CF login page means Access is not in front).
+  The vhost needs `proxy_buffering off` — the Logs and task-progress pages are SSE
+  (`/api/logs/stream`, `/api/events/stream`) and look frozen without it. No websockets.
 - **watchtower** auto-updates all containers daily at 4am and prunes old images.
 - **wrapperr** has a known TODO: its config volume mapping (`/opt/wrapperr:/app/config`)
   must exist before cutover (see inline `FIX` comment).
@@ -188,7 +196,12 @@ is the only layer, and that's fine.
 - Every server block starts with `include /etc/nginx/conf.d/common.include;`
   (TLS, security headers, error pages). Follow that pattern for new subdomains.
 - Repo path is `conf-available/` but includes are referenced at
-  `/etc/nginx/conf.d/` on the server — keep the include paths as written.
+  `/etc/nginx/conf.d/` on the server — keep the include paths as written. Note only
+  `sites-enabled/cpam.tv` is symlinked to this repo; the `conf.d/` files are **copies**
+  and have drifted: the live `common.include` carries an `if ($ai_scraper) { return
+  403; }` guard, driven by an untracked `conf.d/ai-blocklist.conf` map over
+  `$http_user_agent`. It matches curl's default UA, so test vhosts with `-A` set to a
+  browser string or every request looks like a 403 from the block you just wrote.
 - `theme-park.include` applies theme-park.dev CSS via `sub_filter` using the `$app`
   variable; currently commented out in most blocks but the `set $app ...` lines are
   kept so it can be re-enabled.
@@ -205,6 +218,7 @@ is the only layer, and that's fine.
 | requests.cpam.tv | Seerr :5055 |
 | sabnzbd / tautulli / wrapped | :8080 / :8181 / :8282 |
 | invite.cpam.tv | Wizarr :5690 |
+| manage.cpam.tv | Maintainerr :6246 (loopback, fronted by Cloudflare Access) |
 | pods.cpam.tv | dir2cast podcast feed (php7.4, basic auth) |
 
 ## Conventions
