@@ -18,6 +18,7 @@ repo runs locally — changes take effect only after being pulled to the server.
 | `infra/tautulli/monthly_stats.py` | Cron script: posts Tautulli's 30-day most-popular movies/TV to Discord as a compact ranked list (webhook) |
 | `nginx/sites-available/cpam.tv` | All `*.cpam.tv` vhosts (one server block per app) |
 | `nginx/conf-available/` | Shared includes: `common.include` (TLS/headers/AI-scraper guard), `ai-blocklist.conf`, `cloudflare.ips`, `theme-park.include`, `letsencrypt.include` |
+| `nginx/update-cloudflare-ips.sh` | Weekly cron: refresh `cloudflare.ips` from upstream, validate, reload nginx |
 | `mnt_plex.sh` / `umnt_plex.sh` | Bring the storage + arrs + Plex up / down (see boot order below) |
 | `syncclouds.sh` | rclone-copy local encrypted media → Google Drive (`gdrive:/cpam`) |
 | `autoclean.sh` | Delete oldest local media files when disk usage exceeds a threshold |
@@ -150,6 +151,19 @@ what's safe to evict locally, i.e. content already synced to gdrive).
   is ever removed (a bare 403 instead of a CF login page means Access is not in front).
   The vhost needs `proxy_buffering off` — the Logs and task-progress pages are SSE
   (`/api/logs/stream`, `/api/events/stream`) and look frozen without it. No websockets.
+- **Host cron** (nginx): `nginx/update-cloudflare-ips.sh` runs weekly (Mon 04:30) and
+  refreshes `conf-available/cloudflare.ips` from `cloudflare.com/ips-v4`/`-v6`. Drift
+  here fails *silently* — `set_real_ip_from` stops matching a new edge range and every
+  log line and `X-Real-IP` from it shows a Cloudflare IP instead of the real client.
+  It compares the ranges as a **set**, not byte-wise, so an upstream reordering is not
+  treated as a change (that would mean a pointless reload and an alert listing nothing
+  added or removed). It refuses to write unless both lists parse as CIDRs and clear a
+  minimum count — a soft 301 or an error page that still returns 200 would otherwise
+  blank the file and break real_ip on every vhost. On failure or a rejected
+  `nginx -t` it rolls back and leaves the old file in place. It writes with `sudo tee`
+  because the repo copy is root-owned, and it deliberately **does not git commit** —
+  expect a dirty working tree after a real change. `--dry-run` previews, `--list`
+  compares. Pushover keys are optional (missing = log only, never fatal).
 - **watchtower** auto-updates all containers daily at 4am and prunes old images.
 - **wrapperr** has a known TODO: its config volume mapping (`/opt/wrapperr:/app/config`)
   must exist before cutover (see inline `FIX` comment).
