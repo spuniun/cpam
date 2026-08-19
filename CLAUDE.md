@@ -17,7 +17,7 @@ repo runs locally — changes take effect only after being pulled to the server.
 | `infra/kometa/` | Kometa configs (fully committed — `config.yml` uses `<<name>>` Config Secret markers, secrets live in server `.env` as `KOMETA_*`), `deploy.sh` (copy to live config dir), `error_digest.py` (daily Pushover digest of run errors) |
 | `infra/tautulli/monthly_stats.py` | Cron script: posts Tautulli's 30-day most-popular movies/TV to Discord as a compact ranked list (webhook) |
 | `nginx/sites-available/cpam.tv` | All `*.cpam.tv` vhosts (one server block per app) |
-| `nginx/conf-available/` | Shared includes: `common.include` (TLS/headers), `cloudflare.ips`, `theme-park.include`, `letsencrypt.include` |
+| `nginx/conf-available/` | Shared includes: `common.include` (TLS/headers/AI-scraper guard), `ai-blocklist.conf`, `cloudflare.ips`, `theme-park.include`, `letsencrypt.include` |
 | `mnt_plex.sh` / `umnt_plex.sh` | Bring the storage + arrs + Plex up / down (see boot order below) |
 | `syncclouds.sh` | rclone-copy local encrypted media → Google Drive (`gdrive:/cpam`) |
 | `autoclean.sh` | Delete oldest local media files when disk usage exceeds a threshold |
@@ -196,12 +196,19 @@ is the only layer, and that's fine.
 - Every server block starts with `include /etc/nginx/conf.d/common.include;`
   (TLS, security headers, error pages). Follow that pattern for new subdomains.
 - Repo path is `conf-available/` but includes are referenced at
-  `/etc/nginx/conf.d/` on the server — keep the include paths as written. Note only
-  `sites-enabled/cpam.tv` is symlinked to this repo; the `conf.d/` files are **copies**
-  and have drifted: the live `common.include` carries an `if ($ai_scraper) { return
-  403; }` guard, driven by an untracked `conf.d/ai-blocklist.conf` map over
-  `$http_user_agent`. It matches curl's default UA, so test vhosts with `-A` set to a
-  browser string or every request looks like a 403 from the block you just wrote.
+  `/etc/nginx/conf.d/` on the server — keep the include paths as written. The naming
+  matters: `conf.d/*.conf` is auto-included at **http** level, while the `.include`
+  files are pulled in explicitly by each server block. `ai-blocklist.conf` must keep
+  its `.conf` extension (it defines an http-level `map`); the includes must not gain
+  one, or they'd be loaded twice and fail.
+- `common.include` ends every request through a **scraper guard**:
+  `if ($ai_scraper) { return 403; }`, where `$ai_scraper` is a `map` over
+  `$http_user_agent` in `ai-blocklist.conf` (AI crawlers, plus empty UAs and the
+  default UAs of curl / python-requests / Go-http-client / axios / node-fetch).
+  It applies to every vhost. When testing a vhost from the server, pass a browser
+  UA (`curl -A 'Mozilla/5.0 ...'`) — otherwise you get a 403 from this guard and it
+  looks like the block you just wrote is broken. The file also defines a
+  `log_format ai_block` that nothing currently references.
 - `theme-park.include` applies theme-park.dev CSS via `sub_filter` using the `$app`
   variable; currently commented out in most blocks but the `set $app ...` lines are
   kept so it can be re-enabled.
