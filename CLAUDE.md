@@ -250,9 +250,15 @@ would cost terabytes of transfer and change nothing.
   `RulePossibility`/`RuleOperators` enums in
   `/opt/app/packages/contracts/dist/rules/constants.js` inside the container —
   `action 9 = NOT_CONTAINS`, `5 = BEFORE`, `AND = 0`, `OR = 1`.
-- Backdating also drops these shows out of Kometa's `New Episodes` /
-  `Newly Released` collections, which key on added-date. Expect one noisy digest
-  the morning after a re-run.
+- **Backdating is Kometa-neutral — nothing in the TV Shows pipeline keys on
+  `addedAt`.** Worth stating because the collection names imply otherwise:
+  `New Episodes` and `Newly Released` (from `default: basic`) are Plex
+  **smart filters** on `episode_air_date` (last 7 days) and `release` (last 90),
+  i.e. *air* date, not *added* date — and being smart filters, Plex evaluates them
+  live rather than Kometa rebuilding membership each run. The `imdb`, `emmy` and
+  `tautulli` defaults and `config.yml` contain no added-date term either. The only
+  things that read `addedAt` here are Plex's own Recently Added hub (the point of
+  the exercise) and Maintainerr rule group 1 (see the warning above).
 - **Legacy metadata agents:** items keep their old agent when a library's agent is
   changed — the section-level `agent` attribute only says what *new* matches use.
   Detect per item by GUID prefix (`plex://` = modern, `com.plexapp.agents.*` =
