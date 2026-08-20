@@ -20,6 +20,7 @@ repo runs locally — changes take effect only after being pulled to the server.
 | `nginx/sites-available/cpam.tv` | All `*.cpam.tv` vhosts (one server block per app) |
 | `nginx/conf-available/` | Shared includes: `common.include` (TLS/headers/AI-scraper guard), `ai-blocklist.conf`, `cloudflare.ips`, `theme-park.include`, `letsencrypt.include` |
 | `nginx/update-cloudflare-ips.sh` | Weekly cron: refresh `cloudflare.ips` from upstream, validate, reload nginx |
+| `plex/backdate-archive-added.py` | Set `addedAt` to the original air date for the Plex Archive collection, and lock it (`--apply`, `--rollback FILE`) |
 | `mnt_plex.sh` / `umnt_plex.sh` | Bring the storage + arrs + Plex up / down (see boot order below) |
 | `syncclouds.sh` | rclone-copy local encrypted media → Google Drive (`gdrive:/cpam`) |
 | `autoclean.sh` | Delete oldest local media files when disk usage exceeds a threshold |
@@ -53,6 +54,20 @@ then add a `"Label|ciphertext"` entry. TV entries are relative to the TV dir
 `autoclean.sh` has its own separate plaintext `SEARCH_DIRS` list — the two lists are
 maintained independently and are intentionally not identical (autoclean only lists
 what's safe to evict locally, i.e. content already synced to gdrive).
+
+### Never rewrite mtimes under `/home/plex/sorted`
+
+Changing file timestamps on the union looks harmless and is not. Most archived
+media is on the **gdrive RO branch** — measured at 4196 of 4385 files (3.9 TB)
+across just the first 20 of the 84 Archive shows. A `utimes()` there either fails
+or triggers **unionfs copy-up**, pulling terabytes back down from Google Drive
+onto local disk. On the local branch it is no better: `syncclouds.sh` uses
+`rclone copy`, which compares size **and modtime**, so every touched file looks
+modified and gets re-uploaded.
+
+This comes up because rewriting mtimes looks like a way to control Plex's
+`addedAt`. It is not — see below, Plex uses first-scan time, so the rewrite
+would cost terabytes of transfer and change nothing.
 
 ## Docker stacks
 
@@ -206,6 +221,56 @@ what's safe to evict locally, i.e. content already synced to gdrive).
 - Container configs live in a mix of `/opt/<app>` and
   `/var/lib/plexmediaserver/.config/<App>` on the server — match the existing pattern
   for the app family when adding services.
+
+## Plex metadata
+
+- **`addedAt` comes from first-scan time, not file mtime.** Spot-check: Looney
+  Tunes files with mtime `2016-01-18` carry `addedAt` `2017-02-18`. Where the two
+  agree it is only because the file was downloaded and scanned the same day.
+- **Editing metadata in SQLite does not stick.** A raw `UPDATE` against
+  `com.plexapp.plugins.library.db` changes the value but not the **lock flag**, so
+  Plex still considers the field its own and recomputes it on the next refresh.
+  Edit through the API instead — `PUT /library/sections/4/all?type=2&id=<rk>
+  &addedAt.value=<epoch>&addedAt.locked=1`. The `.locked=1` is the part that
+  survives. Same pattern for any field (`title.value`/`title.locked`, …).
+- The **Archive** collection (section 4, ratingKey 30312 — 84 shows / 470 seasons
+  / 7092 episodes) has `addedAt` backdated to each item's original air date by
+  `plex/backdate-archive-added.py`. 176 episodes carry no air date of their own
+  (117 of them Game of Thrones extras) and fall back to their season's earliest,
+  then the show's. Re-run after adding shows to Archive; it is idempotent.
+- **The Maintainerr Archive exclusion is load-bearing — do not remove it.**
+  Rule group 1 (`720p requests: consumed or stale`) matches on
+  `sw_lastEpisodeAddedAt BEFORE 6566400` (76 days). Every backdated Archive show
+  now satisfies that by *decades*. The only thing standing between the archive and
+  a 14-day deletion countdown is the `sw_collection_names_including_parent
+  NOT_CONTAINS "Archive"` condition that opens both rule groups. Verified safe:
+  group 1 is `(S0 AND S1) OR S2` where S0 and S2 both open with that guard (S1 is
+  AND-joined to S0), and group 2 is a single all-AND section that also opens with
+  it. Decode rule ids with `GET :6246/api/rules/constants` and the
+  `RulePossibility`/`RuleOperators` enums in
+  `/opt/app/packages/contracts/dist/rules/constants.js` inside the container —
+  `action 9 = NOT_CONTAINS`, `5 = BEFORE`, `AND = 0`, `OR = 1`.
+- Backdating also drops these shows out of Kometa's `New Episodes` /
+  `Newly Released` collections, which key on added-date. Expect one noisy digest
+  the morning after a re-run.
+- **Legacy metadata agents:** items keep their old agent when a library's agent is
+  changed — the section-level `agent` attribute only says what *new* matches use.
+  Detect per item by GUID prefix (`plex://` = modern, `com.plexapp.agents.*` =
+  legacy), not by the library setting. Section 8 (Selfcare) is deliberately still
+  `com.plexapp.agents.none`: it is MasterClass/workout content that mostly does not
+  exist as TV series upstream, so the thetvdb guids on it would be junk matches.
+- **`Da Ali G Show (US)` must stay on the legacy thetvdb agent.** Plex's provider
+  has only one "Da Ali G Show" entry (the 2000 UK one), which the UK folder already
+  uses. Re-matching the US reboot forces it onto that same GUID and the two
+  auto-merge — and because both have an S01E01 with *different* content, the six UK
+  episodes would be swallowed as alternate "versions" of the US episodes. TVDb
+  models them as separate series; Plex does not. This is a permanent exception, not
+  unfinished cleanup.
+- Same-GUID items in one library auto-merge. That is how `Kingdom of Plants` and
+  `Kingdom of Plants 3D` collapsed into one entry; fix is
+  `PUT /library/metadata/<rk>/split`. Note a **locked title propagates to both
+  halves** of a split, so re-title afterwards — Plex will not re-derive it from the
+  folder name while the field is locked.
 
 ## Discord bots
 

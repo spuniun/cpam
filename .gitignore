@@ -27,3 +27,6 @@ desktop.ini
 *~
 .idea/
 .vscode/
+
+# Rollback snapshots written by plex/backdate-archive-added.py --apply
+plex/archive_addedat_rollback-*.csv
