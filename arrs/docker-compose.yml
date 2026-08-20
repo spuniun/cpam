@@ -25,11 +25,19 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ:-America/New_York}
+      # Radarr passes its own env through to Custom Script connections, which is
+      # how /scripts/preradarr-cleanup.sh gets its credentials. Values live in
+      # arrs/.env (uncommitted).
+      - PRERADARR_API_KEY=${PRERADARR_API_KEY}
+      - PLEX_TOKEN=${PLEX_TOKEN}
     volumes:
       - /var/lib/plexmediaserver/.config/Radarr:/config
       - /home/plex/sorted/Movies:/movies
       - /home/plex/scratch/complete/movies:/downloads
       - /mnt/sftp/unitmonkey/torrents/rtorrent:/rtorrent
+      # Custom scripts straight out of the repo — git pull is the deploy, and
+      # read-only so a compromised Radarr cannot rewrite what it executes.
+      - /home/plex/cpam/arrs/scripts:/scripts:ro
     ports:
       - 7878:7878
     restart: unless-stopped

@@ -12,6 +12,7 @@ repo runs locally — changes take effect only after being pulled to the server.
 |---|---|
 | `arrs/docker-compose.yml` | Media-management stack (`cpam-arrs`): sonarr, radarr, preradarr, lidarr, listenarr, audiobookshelf, maintainerr |
 | `infra/docker-compose.yml` | Support stack (`cpam-infra`): sabnzbd, tautulli, wizarr, kometa, seerr, audiobot, doplarr, wrapperr, watchtower |
+| `arrs/scripts/` | Custom scripts run by the arrs; mounted read-only at `/scripts` (`preradarr-cleanup.sh` — drop a movie from preradarr once Radarr imports it) |
 | `infra/audiobot/` | Custom Discord bot (locally built image): `/audiobooks` mints Wizarr invites for the audiobook library |
 | `infra/doplarr/config.toml` | Config for doplarr_rs, the Discord `/request` bot fronting Seerr |
 | `infra/kometa/` | Kometa configs (fully committed — `config.yml` uses `<<name>>` Config Secret markers, secrets live in server `.env` as `KOMETA_*`), `deploy.sh` (copy to live config dir), `error_digest.py` (daily Pushover digest of run errors) |
@@ -63,7 +64,10 @@ what's safe to evict locally, i.e. content already synced to gdrive).
   Config Secrets: `KOMETA_PLEXTOKEN`, `KOMETA_TMDBKEY`, `KOMETA_TAUTULLIKEY`,
   `KOMETA_OMDBKEY`, `KOMETA_MDBLISTKEY`, `KOMETA_RADARRKEY`, `KOMETA_PRERADARRKEY`,
   `KOMETA_SONARRKEY`. (No `KOMETA_TRAKT*` — Trakt runs in public mode, see below.)
-  Don't hardcode UIDs or secrets into the compose files.
+  Don't hardcode UIDs or secrets into the compose files. Note there are **two**
+  uncommitted env files, one per stack: the list above is `infra/.env`, while
+  `arrs/.env` holds `PUID`/`PGID`/`TZ` plus `PRERADARR_API_KEY` and `PLEX_TOKEN`
+  for the preradarr cleanup script below.
 - **Host cron** (not compose): `infra/tautulli/monthly_stats.py` runs on the 1st of
   the month, sourcing the same `.env` (`set -a; . .env; set +a`). It fetches
   `get_home_stats` from Tautulli on localhost:8181 and posts one compact webhook
@@ -151,6 +155,38 @@ what's safe to evict locally, i.e. content already synced to gdrive).
   is ever removed (a bare 403 instead of a CF login page means Access is not in front).
   The vhost needs `proxy_buffering off` — the Logs and task-progress pages are SSE
   (`/api/logs/stream`, `/api/events/stream`) and look frozen without it. No websockets.
+- **preradarr cleanup** (`arrs/scripts/preradarr-cleanup.sh`) is a Radarr **Custom
+  Script** connection ("Preradarr Cleanup", on Download/Upgrade) that deletes the
+  matching movie from preradarr once Radarr imports the real release, then refreshes
+  the Plex **Pre** library (section 2) and empties its trash so the item actually
+  leaves the view instead of lingering as unavailable. It exists because Maintainerr
+  *cannot* do this: its rules evaluate the Plex **Movies** library, while the preradarr
+  copy lives in the separate **Pre** library, so a Movies-side match never reaches the
+  Pre item. Radarr's own import event is the only place that knows both.
+  Matching is by `tmdbId`, falling back to `imdbId`. It deletes with
+  `deleteFiles=true` and **no** import exclusion (`PRERADARR_EXCLUDE=true` opts in):
+  preradarr has no import lists, so nothing re-adds a deleted title, and an exclusion
+  is a global blocklist that would also block a future deliberate add.
+  The script is mounted **read-only straight from the repo**
+  (`/home/plex/cpam/arrs/scripts:/scripts:ro`), so a `git pull` is the whole deploy —
+  no copy step like kometa's `deploy.sh`. Credentials come from the container env
+  (`PRERADARR_API_KEY`, `PLEX_TOKEN` in `arrs/.env`), which Radarr passes through to
+  custom scripts; changing them needs `docker compose up -d radarr`, not merely a
+  restart of Radarr. It logs to `/config/preradarr-cleanup.log` (host:
+  `/var/lib/plexmediaserver/.config/Radarr/`), self-truncating at 1 MB — deliberately
+  *not* `/config/logs/`, which Radarr's own log-cleanup task prunes.
+  Two Plex API details worth keeping: `/library/sections/N/refresh` answers **GET**
+  but `/library/sections/N/emptyTrash` answers **PUT** only (GET and POST both 404,
+  which reads like a wrong URL rather than a wrong verb); and Plex does **not**
+  guarantee attribute order in the section list — `refreshing=` currently precedes
+  `key=`, so the scan-completion poll must not assume an order, or it silently never
+  matches and burns the full timeout on every single import.
+  Test with `docker exec -u abc radarr /scripts/preradarr-cleanup.sh --test`;
+  `--list` dumps preradarr's movies, and `--dry-run` with `radarr_*` env vars set
+  resolves a match without deleting. Radarr's own Test button reaches the same check
+  via `radarr_eventtype=Test`. (Unrelated: the older `Telegram` custom script
+  connection is dead — every event is false and its `/usr/bin/python3.6` no longer
+  exists in the image.)
 - **Host cron** (nginx): `nginx/update-cloudflare-ips.sh` runs weekly (Mon 04:30) and
   refreshes `conf-available/cloudflare.ips` from `cloudflare.com/ips-v4`/`-v6`. Drift
   here fails *silently* — `set_real_ip_from` stops matching a new edge range and every
