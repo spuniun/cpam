@@ -72,10 +72,20 @@ LOG_LINE = re.compile(
 #   MDBList items   - titles MDBList has no record for. Verified by querying
 #       MDBList directly with the IDs Plex holds: all correctly matched on the
 #       modern Plex agent, all 404. A third-party data gap, not a mismatch.
+#   TMDb movies     - dead TMDb IDs carried by the third-party lists the
+#       collections are built from, not by anything in the library: each one
+#       shows up only in a "Missing Movies from Library" report, and every ID
+#       seen so far 404s on TMDb today because the record was deleted or
+#       merged upstream. Two were traced back to stale imdb_to_tmdb_map rows
+#       (tt5362760, tt5362730, the Prometheus viral shorts), whose IMDb IDs
+#       TMDb now resolves to nothing, so there is no id left to remap to.
+#       The trade-off: a list entry that dies later is hidden too — but it is
+#       just as unfixable from here, since we do not own the lists.
 BENIGN = [
     ("overlay searches", re.compile(r"^Plex Error: \S+: No matches found with regex pattern ")),
     ("TMDb episodes", re.compile(r"^TMDb Error: No Episode found for TMDb ID ")),
     ("MDBList items", re.compile(r'^MDBList Error: 404 - \{"error":"Item not found"\}')),
+    ("TMDb movies", re.compile(r"^TMDb Error: No Movie found for TMDb ID: ")),
 ]
 
 
