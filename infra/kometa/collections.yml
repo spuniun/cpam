@@ -35,7 +35,7 @@ collections:
 
   DC Comics:
     template: {name: collection}
-    trakt_list: https://trakt.tv/users/ljransom/lists/dc-universe-movies
+    trakt_list: https://app.trakt.tv/users/ricksanchez/lists/dc-universe-movies
     mdblist_list:
       - https://mdblist.com/lists/godzgiftmm/dc-animated-universe-and-dc-comics
       - https://mdblist.com/lists/lt3dave/dc-comics-3nyof3xt9n
@@ -92,8 +92,7 @@ collections:
     imdb_list: https://www.imdb.com/list/ls075033283/
     trakt_list: 
       - https://trakt.tv/users/arachn0id/lists/lego-movies-tv-series
-      - https://trakt.tv/users/dillerface/lists/lego-marvel
-      - https://trakt.tv/users/pandali/lists/lego-world
+      - https://app.trakt.tv/users/puravidabarron/lists/lego
     url_poster: https://theposterdb.com/api/assets/11979
 
   Living Dead:
@@ -111,7 +110,7 @@ collections:
     trakt_list:
       - https://trakt.tv/users/martheo/lists/marvel
       - https://trakt.tv/users/arachn0id/lists/marvel-animated
-      - https://trakt.tv/lists/official/lego-marvel-super-heroes-collection
+      - https://trakt.tv/lists/19914544  # official "LEGO Marvel Super Heroes Collection"; slug form 400s on /items
     mdblist_list: https://mdblist.com/lists/k0meta/external/15110
     url_poster: https://theposterdb.com/api/assets/81748
 
