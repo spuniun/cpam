@@ -81,11 +81,23 @@ LOG_LINE = re.compile(
 #       TMDb now resolves to nothing, so there is no id left to remap to.
 #       The trade-off: a list entry that dies later is hidden too — but it is
 #       just as unfixable from here, since we do not own the lists.
+#   TVDb IMDb ids   - an IMDb id handed to TVDb's URL validator, which Kometa
+#       itself put there. Resolving an IMDb *episode* id gives TMDb type
+#       "episode"; if TMDb then has no tvdb_id for the parent show, builder.py
+#       falls back to OMDb and assigns omdb_item.series_id to tvdb_id — but
+#       OMDb's seriesID field is an IMDb id, so the string lands in
+#       missing_shows and the missing-shows report feeds it to TVDb. Traced
+#       from the Arrowverse playlist (imdb_list ls566667558), which carries the
+#       six "Arrow: Blood Rush" episode ids; their show is tt3348258 / TMDb
+#       72895, whose TMDb record has tvdb_id: null. Upstream bug — nothing in
+#       our config chooses those ids or that fallback, and the dedupe in
+#       missing_shows collapses the six episodes onto one error line.
 BENIGN = [
     ("overlay searches", re.compile(r"^Plex Error: \S+: No matches found with regex pattern ")),
     ("TMDb episodes", re.compile(r"^TMDb Error: No Episode found for TMDb ID ")),
     ("MDBList items", re.compile(r'^MDBList Error: 404 - \{"error":"Item not found"\}')),
     ("TMDb movies", re.compile(r"^TMDb Error: No Movie found for TMDb ID: ")),
+    ("TVDb IMDb ids", re.compile(r"^TVDb Error: tt\d+ must begin with https://www\.thetvdb\.com/")),
 ]
 
 
