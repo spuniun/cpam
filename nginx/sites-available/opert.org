@@ -51,3 +51,54 @@ server {
                 proxy_http_version      1.1;
         }
 }
+
+server {
+        server_name tasks.opert.org;
+        # Same inlined opert.org setup as money.opert.org above; cert is the
+        # Cloudflare Origin Certificate for *.opert.org.
+        listen 172.20.20.250:443 ssl;
+        ssl_certificate /etc/ssl/certs/CF_opert.org.pem;
+        ssl_certificate_key /etc/ssl/private/CF_opert.org.key;
+        client_max_body_size 10m;
+        client_body_buffer_size 128k;
+        include /etc/nginx/conf.d/cloudflare.ips;
+        if ($ai_scraper) {
+                return 403;
+        }
+        add_header Strict-Transport-Security "max-age=63072000;";
+        add_header X-Xss-Protection "1; mode=block" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy same-origin;
+        add_header Content-Security-Policy "frame-ancestors 'self';";
+        error_page 404 /404.html;
+        location /404.html {
+                root /usr/share/nginx/html;
+                internal;
+        }
+        error_page 500 502 503 504 /503.html;
+        location /503.html {
+                root /usr/share/nginx/html;
+                internal;
+        }
+        location ~ /\. {
+                deny all;
+        }
+        # The tasks app (opert-tasks container, 127.0.0.1:8090) has NO login of
+        # its own; auth is a Cloudflare Access policy on this hostname. Fail
+        # closed: requests that did not come through Access get a 403.
+        if ($http_cf_access_jwt_assertion = "") {
+                return 403;
+        }
+        location / {
+                proxy_pass              http://127.0.0.1:8090;
+                proxy_redirect          off;
+                proxy_set_header        Host $http_host;
+                proxy_set_header        X-Real-IP $http_cf_connecting_ip;
+                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header        X-Forwarded-Proto $scheme;
+                proxy_set_header        X-Forwarded-Ssl on;
+                proxy_set_header        Upgrade $http_upgrade;
+                proxy_set_header        Connection $connection_upgrade;
+                proxy_http_version      1.1;
+        }
+}
