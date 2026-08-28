@@ -284,38 +284,3 @@ server {
                 #include                 /etc/nginx/conf.d/theme-park.include;
         }
 }
-
-server {
-        server_name pods.cpam.tv;
-	include /etc/nginx/conf.d/common.include;
-	root /var/www/podcasts;
-        index index.php index.html index.htm;
-	auth_basic "Restricted Content";
-	auth_basic_user_file /etc/nginx/.htpasswd;
-	rewrite ^/(.+)/rss$ /dir2cast.php?dir=$1 last;
-	location / {
-		try_files $uri $uri/ /index.php?$args;
-	}
-	location ~* \.(mp3|m4b)$ {
-    		add_header Accept-Ranges bytes;
-    		mp4_buffer_size 1m;
-    		mp4_max_buffer_size 5m;
-    
-    		# Enable byte-range processing
-    		add_header 'Access-Control-Allow-Origin' '*';
-    		add_header 'Access-Control-Allow-Methods' 'GET, HEAD, OPTIONS';
-    		add_header 'Access-Control-Allow-Headers' 'Range,DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type';
-    
-    		# Ensure proper MIME types
-    		types {
-        		audio/mpeg mp3;
-        		audio/x-m4b m4b;  # Specific MIME type for m4b audiobook files
-    		}
-	}
-	location ~ \.php$ {
-                try_files $uri =404;
-                include /etc/nginx/fastcgi.conf;
-                fastcgi_pass unix:/run/php/php7.4-fpm.sock;
-		fastcgi_read_timeout 300s;
-        }
-}
