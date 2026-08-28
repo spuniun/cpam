@@ -145,7 +145,11 @@ would cost terabytes of transfer and change nothing.
 - **Host cron** (kometa): `infra/kometa/error_digest.py` runs daily after the 05:00
   kometa run, parses `logs/meta.log`, and sends one Pushover digest of the run's
   deduped errors — deliberately a single message per run (the per-error webhook
-  would flood the phone), and it doubles as a heartbeat that kometa actually ran.
+  would flood the phone). It sends **only when there is something actionable**: a
+  run whose errors are all `BENIGN` (or that has none) is silent. It no longer
+  doubles as a daily heartbeat, so the stale-log check carries that job instead —
+  a `meta.log` untouched for 26h still pushes "no recent run ⚠️", as does a
+  missing log.
   CRITICALs are ranked first (they fire once, so frequency ranking buries them).
   Error classes that fire every run and that no config change can fix — TVDb-vs-
   TMDb episode numbering, MDBList gaps, resolution overlays finding no items — are

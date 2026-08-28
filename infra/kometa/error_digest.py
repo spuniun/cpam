@@ -4,13 +4,18 @@ error_digest.py — push a one-message Pushover digest of the latest Kometa run.
 
 Parses Kometa's meta.log (the current/most recent run — Kometa rotates it per
 run), collects every [ERROR]/[CRITICAL] line, dedupes them with counts, and
-sends a single Pushover notification. Always sends, even on a clean run, so
-the daily message doubles as a heartbeat: no digest by breakfast means kometa
-didn't run.
+sends a single Pushover notification.
+
+Sends only when there is something to act on: a run with no actionable errors
+is silent, so the phone stays quiet on a good morning. The one exception is a
+stale log — if meta.log has not been touched in 26h it still pushes, since a
+kometa that stopped running would otherwise be indistinguishable from a clean
+run now that clean runs are silent.
 
 Errors matching BENIGN below are counted but not listed individually — see the
-comment there for why. They are still reported, on one tail line, so a sudden
-jump in their volume is visible without them burying the actionable errors.
+comment there for why. They never trigger a notification on their own; when one
+is sent anyway they ride along on one tail line, so a sudden jump in their
+volume is visible without them burying the actionable errors.
 
 Intended to run from host cron daily, after the 05:00 kometa run, sourcing the
 same .env as the compose stack (see CLAUDE.md):
@@ -26,7 +31,8 @@ Environment:
   DIGEST_TOP          unique errors to list in the message, default 8
 
 Flags:
-  --dry-run           print the digest instead of sending it
+  --dry-run           print the digest instead of sending it (says so when
+                      there is nothing to send)
   --show-benign       list the benign errors individually too (debugging)
 """
 
@@ -170,6 +176,12 @@ def parse_log(path: str):
 
 
 def build_digest():
+    """Return (title, message), or None when there is nothing worth sending.
+
+    Nothing worth sending means a run whose only errors are benign (or that had
+    none at all). A missing or stale log still returns a digest — that is the
+    failure the silence would otherwise hide.
+    """
     if not os.path.exists(LOG_PATH):
         return "Kometa: no log found", f"{LOG_PATH} does not exist — has kometa ever run?"
 
@@ -184,8 +196,9 @@ def build_digest():
         title = "Kometa: no recent run ⚠️"
         header = f"meta.log last touched {age_hours:.0f}h ago — is the container running?"
     elif total == 0:
-        title = "Kometa: run clean ✅"
-        header = f"Run started {first_ts or 'unknown'}; no actionable errors."
+        # Nothing actionable — stay quiet. Benign errors fire every run by
+        # definition and are never worth waking the phone for on their own.
+        return None
     else:
         title = f"Kometa: {total} error{'s' if total != 1 else ''} ({len(counts)} unique)"
         header = f"Run started {first_ts or 'unknown'}"
@@ -241,7 +254,12 @@ def send_pushover(title: str, message: str) -> None:
 
 
 def main() -> None:
-    title, message = build_digest()
+    digest = build_digest()
+    if digest is None:
+        if DRY_RUN:
+            print("--- nothing to send: no actionable errors ---")
+        return
+    title, message = digest
     if DRY_RUN:
         print(f"--- {title} ---\n{message}")
         return
