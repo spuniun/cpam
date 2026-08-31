@@ -12,7 +12,7 @@ repo runs locally — changes take effect only after being pulled to the server.
 |---|---|
 | `arrs/docker-compose.yml` | Media-management stack (`cpam-arrs`): sonarr, radarr, preradarr, lidarr, listenarr, audiobookshelf, maintainerr |
 | `infra/docker-compose.yml` | Support stack (`cpam-infra`): sabnzbd, tautulli, wizarr, kometa, seerr, audiobot, doplarr, wrapperr, watchtower |
-| `arrs/scripts/` | Custom scripts run by the arrs; mounted read-only at `/scripts` (`preradarr-cleanup.sh` — drop a movie from preradarr once Radarr imports it) |
+| `arrs/scripts/` | Custom scripts run by the arrs; mounted read-only at `/scripts`. The preradarr pair keeps the Pre library stocked without hand-holding: `preradarr-add.sh` (seed preradarr when Radarr gains a not-yet-released movie) and `preradarr-cleanup.sh` (drop it again once Radarr imports the real release) |
 | `infra/audiobot/` | Custom Discord bot (locally built image): `/audiobooks` mints Wizarr invites for the audiobook library |
 | `infra/doplarr/config.toml` | Config for doplarr_rs, the Discord `/request` bot fronting Seerr |
 | `infra/kometa/` | Kometa configs (fully committed — `config.yml` uses `<<name>>` Config Secret markers, secrets live in server `.env` as `KOMETA_*`), `deploy.sh` (copy to live config dir), `error_digest.py` (daily Pushover digest of run errors) |
@@ -82,7 +82,7 @@ would cost terabytes of transfer and change nothing.
   Don't hardcode UIDs or secrets into the compose files. Note there are **two**
   uncommitted env files, one per stack: the list above is `infra/.env`, while
   `arrs/.env` holds `PUID`/`PGID`/`TZ` plus `PRERADARR_API_KEY` and `PLEX_TOKEN`
-  for the preradarr cleanup script below.
+  for the preradarr scripts below.
 - **Host cron** (not compose): `infra/tautulli/monthly_stats.py` runs on the 1st of
   the month, sourcing the same `.env` (`set -a; . .env; set +a`). It fetches
   `get_home_stats` from Tautulli on localhost:8181 and posts one compact webhook
@@ -174,8 +174,44 @@ would cost terabytes of transfer and change nothing.
   is ever removed (a bare 403 instead of a CF login page means Access is not in front).
   The vhost needs `proxy_buffering off` — the Logs and task-progress pages are SSE
   (`/api/logs/stream`, `/api/events/stream`) and look frozen without it. No websockets.
-- **preradarr cleanup** (`arrs/scripts/preradarr-cleanup.sh`) is a Radarr **Custom
-  Script** connection ("Preradarr Cleanup", on Download/Upgrade) that deletes the
+- **preradarr add** (`arrs/scripts/preradarr-add.sh`) is the other half of the
+  preradarr pair: a Radarr **Custom Script** connection ("Preradarr Add", on
+  **Movie Added** only) that copies a newly added movie into preradarr when the
+  digital release is not out yet. Between it and the cleanup script below, the Pre
+  library never needs a manual add or remove — a Seerr request or a hand-add in
+  Radarr seeds the pre copy, and Radarr's own import takes it away again.
+  **The availability test is the whole point of the script**, and it is not one
+  field. `digitalRelease` is null for most of the library (every pre-streaming-era
+  film, and plenty of new ones until a date is announced), so it can only ever be a
+  *positive* signal — a movie is out when `digitalRelease` or `physicalRelease` has
+  passed, **or** when Radarr's own `status` is `released`, which skyhook sets from
+  the same dates. Measured over all 3768 movies: 33 candidates, and not one
+  `status != released` movie had a past digital date, so the two tests never
+  disagree — the explicit date checks exist to stay correct if skyhook lags, not to
+  patch a known gap. Cross-checked against the hand-built Pre library, the rule
+  reproduced 28 of its 30 entries.
+  Also note **`Radarr_Movie_Digital_Release_Date` does not exist** — the MovieAdded
+  environment carries only `In_Cinemas_Date` and `Physical_Release_Date` (confirm
+  with `strings -el Radarr.Core.dll | grep Radarr_`), which is why the script reads
+  the movie back from Radarr's API instead of trusting its own event.
+  It needs Radarr's API key for that and takes it from `/config/config.xml` — inside
+  the radarr container that *is* Radarr's key, so there is no new secret in
+  `arrs/.env` and no compose change (`RADARR_API_KEY` overrides if ever needed).
+  Adds are POSTed from preradarr's own `/movie/lookup/tmdb` result so preradarr
+  keeps the title/slug/images it resolved, with root `/movies`, quality profile
+  `Any`, `monitored`, `minimumAvailability: announced` and a search on add —
+  matching how the library was built by hand. Duplicate `tmdbId`s are skipped.
+  Test with `docker exec -u abc radarr /scripts/preradarr-add.sh --test`;
+  `--list` prints an add/skip verdict and its reason for every Radarr movie (~4s,
+  one jq pass — classifying per movie meant 3768 jq processes), and `--sync`
+  backfills every eligible movie that is not in preradarr yet, sleeping
+  `SYNC_DELAY` (3s) between adds so it does not fire 30 indexer searches at once.
+  `--sync --dry-run` first. Nothing here touches the filesystem — adds go through
+  the API — so unlike the arrs themselves it is safe to run with the union mount
+  down; it just queues work.
+- **preradarr cleanup** (`arrs/scripts/preradarr-cleanup.sh`) is the reverse of the
+  above: a Radarr **Custom Script** connection ("Preradarr Cleanup", on
+  Download/Upgrade) that deletes the
   matching movie from preradarr once Radarr imports the real release, then refreshes
   the Plex **Pre** library (section 2) and empties its trash so the item actually
   leaves the view instead of lingering as unavailable. It exists because Maintainerr
