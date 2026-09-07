@@ -62,9 +62,9 @@ server {
         client_max_body_size 10m;
         client_body_buffer_size 128k;
         include /etc/nginx/conf.d/cloudflare.ips;
-        if ($ai_scraper) {
-                return 403;
-        }
+        # NOTE: unlike the other vhosts, the $ai_scraper and Access-JWT checks
+        # for this host live inside `location /` so the Claude connector
+        # paths below can be exempted from them.
         add_header Strict-Transport-Security "max-age=63072000;";
         add_header X-Xss-Protection "1; mode=block" always;
         add_header X-Content-Type-Options "nosniff" always;
@@ -80,16 +80,41 @@ server {
                 root /usr/share/nginx/html;
                 internal;
         }
+        # Claude connector (MCP server built into the tasks app). claude.ai
+        # calls these server-to-server and cannot complete a Cloudflare Access
+        # login, so a separate Access application BYPASSES exactly these paths
+        # and the app enforces its own OAuth bearer tokens on /mcp (/register,
+        # /token, /revoke and the .well-known metadata are public by OAuth
+        # design). /authorize (the consent page) is deliberately NOT listed:
+        # it is browser-visited and stays behind Access via `location /`.
+        # Must precede `location ~ /\.` so /.well-known/oauth-* is reachable.
+        location ~ ^/(mcp|token|register|revoke)(/|$)|^/\.well-known/oauth- {
+                proxy_pass              http://127.0.0.1:8090;
+                proxy_redirect          off;
+                proxy_set_header        Host $http_host;
+                proxy_set_header        X-Real-IP $http_cf_connecting_ip;
+                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header        X-Forwarded-Proto $scheme;
+                proxy_set_header        X-Forwarded-Ssl on;
+                proxy_http_version      1.1;
+                # refresh_tasks pulls three APIs synchronously; let it finish.
+                proxy_read_timeout      180s;
+                proxy_buffering         off;
+        }
         location ~ /\. {
                 deny all;
         }
-        # The tasks app (opert-tasks container, 127.0.0.1:8090) has NO login of
-        # its own; auth is a Cloudflare Access policy on this hostname. Fail
-        # closed: requests that did not come through Access get a 403.
-        if ($http_cf_access_jwt_assertion = "") {
-                return 403;
-        }
         location / {
+                if ($ai_scraper) {
+                        return 403;
+                }
+                # The tasks app (opert-tasks container, 127.0.0.1:8090) has NO
+                # login of its own; auth is a Cloudflare Access policy on this
+                # hostname. Fail closed: requests that did not come through
+                # Access get a 403.
+                if ($http_cf_access_jwt_assertion = "") {
+                        return 403;
+                }
                 proxy_pass              http://127.0.0.1:8090;
                 proxy_redirect          off;
                 proxy_set_header        Host $http_host;
