@@ -36,7 +36,7 @@ rules:
         action: CONTAINS_ALL
         lastValue: Tautulli.sw_watchers
       - operator: OR
-        firstValue: Tautulli.sw_lastWatched
+        firstValue: Tautulli.lastViewedAt
         action: BEFORE
         customValue:
           type: custom_days
