@@ -12,6 +12,7 @@ repo runs locally — changes take effect only after being pulled to the server.
 |---|---|
 | `arrs/docker-compose.yml` | Media-management stack (`cpam-arrs`): sonarr, radarr, preradarr, lidarr, listenarr, audiobookshelf, maintainerr |
 | `infra/docker-compose.yml` | Support stack (`cpam-infra`): sabnzbd, tautulli, wizarr, kometa, seerr, audiobot, doplarr, wrapperr, watchtower |
+| `arrs/rules/` | Maintainerr rule groups exported as YAML (`720p_requests.yml`, `my_shows.yml`) — a readable mirror of what lives in Maintainerr's SQLite; edit here, then paste into the rule group's YAML import |
 | `arrs/scripts/` | Custom scripts run by the arrs; mounted read-only at `/scripts`. The preradarr pair keeps the Pre library stocked without hand-holding: `preradarr-add.sh` (seed preradarr when Radarr gains a not-yet-released movie) and `preradarr-cleanup.sh` (drop it again once Radarr imports the real release) |
 | `infra/audiobot/` | Custom Discord bot (locally built image): `/audiobooks` mints Wizarr invites for the audiobook library |
 | `infra/doplarr/config.toml` | Config for doplarr_rs, the Discord `/request` bot fronting Seerr |
@@ -174,6 +175,38 @@ would cost terabytes of transfer and change nothing.
   is ever removed (a bare 403 instead of a CF login page means Access is not in front).
   The vhost needs `proxy_buffering off` — the Logs and task-progress pages are SSE
   (`/api/logs/stream`, `/api/events/stream`) and look frozen without it. No websockets.
+  Rules are mirrored in `arrs/rules/*.yml`; the round-trip is
+  `POST /api/rules/yaml/{encode,decode}` (decode takes `{yaml, mediaType: "season"}`)
+  and `POST /api/rules/test` `{rulegroupId, mediaId}` evaluates one item read-only,
+  returning every rule's operands and verdict — the way to check a change without
+  running the group. To dry-run a *whole* edit, create a second group with
+  `isActive: false` + `keepInMaintainerrOnly: true` (DB-only, no Plex collection),
+  test against it, then `DELETE /api/rules/<id>`.
+  **Section semantics:** within a section rules apply left to right (`A AND B OR C`
+  = `(A AND B) OR C`); a section's *first* rule's operator joins that whole section
+  to the accumulated result. `CONTAINS_ALL` against an **empty** right-hand list is
+  `false`, not vacuously true.
+- **Watch state comes from Plex, not Tautulli, in `my_shows.yml`.** Tautulli's
+  history has holes — plays it never saw (it was down, or the item was marked
+  watched) leave no row, and one missing episode empties
+  `Tautulli.sw_allEpisodesSeenBy` for the whole season, so a season you finished
+  reads as unwatched forever. Measured: King of the Hill S2 had 22 of 23 episodes in
+  Tautulli and 23 of 23 in Plex's own `/status/sessions/history/all`. The `Plex.*`
+  equivalents (`sw_allEpisodesSeenBy` id 12, `sw_watchers` 18, `sw_lastWatched` 13)
+  read that history instead, and Maintainerr snapshots it per library rather than
+  making a call per episode. Swapping the four Tautulli terms for Plex ones added 13
+  of 713 seasons and removed none. Keep both sides of a comparison on the same
+  source — mixing them silently loosens it, since Tautulli's rows are a subset.
+  Tautulli remains the only source with per-user props (`lastViewedAtByUser`), which
+  `my_shows.yml` does not use.
+- **`my_shows.yml` is `(I finished it) AND (everyone finished OR nobody watched in
+  76 days)`.** Section 0 ends with `Plex.sw_allEpisodesSeenBy CONTAINS spuniun`;
+  section 1 is `CONTAINS_ALL Plex.sw_watchers` OR `Plex.sw_lastWatched BEFORE 76
+  days`. The grace period is deliberately coarse: no rule property answers "when did
+  the person who is *behind* last watch", so `sw_lastWatched` (newest view by anyone,
+  me included) stands in. A season therefore waits 76 days from the last activity of
+  any kind, which is stricter than 76 days from the laggard's last view, never
+  looser. 76 matches rule group 1 (`6566400` seconds).
 - **preradarr add** (`arrs/scripts/preradarr-add.sh`) is the other half of the
   preradarr pair: a Radarr **Custom Script** connection ("Preradarr Add", on
   **Movie Added** only) that copies a newly added movie into preradarr when the

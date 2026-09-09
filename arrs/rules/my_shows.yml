@@ -25,13 +25,19 @@ rules:
           type: number
           value: 0
       - operator: AND
-        firstValue: Tautulli.sw_allEpisodesSeenBy
-        action: CONTAINS_ALL
-        lastValue: Tautulli.sw_watchers
-      - operator: AND
-        firstValue: Tautulli.sw_allEpisodesSeenBy
+        firstValue: Plex.sw_allEpisodesSeenBy
         action: CONTAINS
         customValue:
           type: text
           value: spuniun
-
+  - "1":
+      - operator: AND
+        firstValue: Plex.sw_allEpisodesSeenBy
+        action: CONTAINS_ALL
+        lastValue: Plex.sw_watchers
+      - operator: OR
+        firstValue: Plex.sw_lastWatched
+        action: BEFORE
+        customValue:
+          type: custom_days
+          value: "76"
