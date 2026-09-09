@@ -196,19 +196,33 @@ would cost terabytes of transfer and change nothing.
   Tautulli and 23 of 23 in Plex's own `/status/sessions/history/all`. The `Plex.*`
   equivalents (`sw_allEpisodesSeenBy` id 12, `sw_watchers` 18, `sw_lastWatched` 13)
   read that history instead, and Maintainerr snapshots it per library rather than
-  making a call per episode. Swapping the four Tautulli terms for Plex ones added 13
+  making a call per episode. Swapping the four Tautulli terms for Plex ones added 7
   of 713 seasons and removed none. Keep both sides of a comparison on the same
   source — mixing them silently loosens it, since Tautulli's rows are a subset.
   Tautulli remains the only source with per-user props (`lastViewedAtByUser`), which
   `my_shows.yml` does not use.
 - **`my_shows.yml` is `(I finished it) AND (everyone finished OR nobody watched in
   76 days)`.** Section 0 ends with `Plex.sw_allEpisodesSeenBy CONTAINS spuniun`;
-  section 1 is `CONTAINS_ALL Plex.sw_watchers` OR `Plex.sw_lastWatched BEFORE 76
-  days`. The grace period is deliberately coarse: no rule property answers "when did
-  the person who is *behind* last watch", so `sw_lastWatched` (newest view by anyone,
-  me included) stands in. A season therefore waits 76 days from the last activity of
-  any kind, which is stricter than 76 days from the laggard's last view, never
-  looser. 76 matches rule group 1 (`6566400` seconds).
+  section 1 is `CONTAINS_ALL Plex.sw_watchers` OR `Plex.lastViewedAt BEFORE 76 days`.
+  The grace period is deliberately coarse: no rule property answers "when did the
+  person who is *behind* last watch", so the season-wide last view stands in. A
+  season therefore waits 76 days from the last activity of any kind, which is
+  stricter than 76 days from the laggard's last view, never looser. 76 matches rule
+  group 1 (`6566400` seconds).
+- **The staleness date must be `lastViewedAt` (Plex id 7), never `sw_lastWatched`
+  (13).** Despite the name, `sw_lastWatched` — "Newest episode view date" — is *not*
+  the newest view. Both getters sort the season's history by episode index and return
+  the top row's date, so it answers "when was the furthest-along episode watched".
+  Once anyone has reached the finale, that date freezes while other people work
+  through the early episodes, and a staleness test on it fires while a season is
+  being actively watched. Measured on the first cut of this rule: 6 of 13 collected
+  seasons had real views inside the 76-day window that `sw_lastWatched` could not
+  see — A Knight of the Seven Kingdoms S1 read 2026-02-26 while someone watched E4
+  that same morning. `lastViewedAt` is a true max over the season's history (plus the
+  item's own `lastViewedAt` as a floor) and is the only one of the two safe for a
+  "nobody has touched this" test. `Tautulli.lastViewedAt` (id 4) is the equivalent on
+  that side. The same trap is live in `720p_requests.yml` section 1, masked only by
+  Tautulli's shallower history.
 - **preradarr add** (`arrs/scripts/preradarr-add.sh`) is the other half of the
   preradarr pair: a Radarr **Custom Script** connection ("Preradarr Add", on
   **Movie Added** only) that copies a newly added movie into preradarr when the
