@@ -1,0 +1,37 @@
+mediaType: SEASONS
+rules:
+  - "0":
+      - firstValue: Plex.sw_collection_names_including_parent
+        action: NOT_CONTAINS
+        customValue:
+          type: text
+          value: Archive
+      - operator: AND
+        firstValue: Sonarr.qualityProfileName
+        action: NOT_EQUALS
+        customValue:
+          type: text
+          value: 720p
+      - operator: AND
+        firstValue: Sonarr.unaired_episodes
+        action: EQUALS
+        customValue:
+          type: boolean
+          value: "false"
+      - operator: AND
+        firstValue: Sonarr.missing_episodes_season
+        action: EQUALS
+        customValue:
+          type: number
+          value: 0
+      - operator: AND
+        firstValue: Tautulli.sw_allEpisodesSeenBy
+        action: CONTAINS_ALL
+        lastValue: Tautulli.sw_watchers
+      - operator: AND
+        firstValue: Tautulli.sw_allEpisodesSeenBy
+        action: CONTAINS
+        customValue:
+          type: text
+          value: spuniun
+
