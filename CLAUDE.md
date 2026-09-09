@@ -176,7 +176,9 @@ would cost terabytes of transfer and change nothing.
   The vhost needs `proxy_buffering off` — the Logs and task-progress pages are SSE
   (`/api/logs/stream`, `/api/events/stream`) and look frozen without it. No websockets.
   Rules are mirrored in `arrs/rules/*.yml`; the round-trip is
-  `POST /api/rules/yaml/{encode,decode}` (decode takes `{yaml, mediaType: "season"}`)
+  `POST /api/rules/yaml/{encode,decode}` — decode takes `{yaml, mediaType: "season"}`,
+  encode takes `rules` as a JSON **string**, not an array (an array answers the
+  unhelpful `Invalid input`) —
   and `POST /api/rules/test` `{rulegroupId, mediaId}` evaluates one item read-only,
   returning every rule's operands and verdict — the way to check a change without
   running the group. To dry-run a *whole* edit, create a second group with
