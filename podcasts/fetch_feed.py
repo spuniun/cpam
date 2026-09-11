@@ -41,6 +41,7 @@ from datetime import datetime
 # Destination dir name → feed URL. Dirs are relative to DEST_BASE.
 FEEDS = {
     "Hardcore History": "https://feeds.feedburner.com/dancarlin/history?format=xml",
+    "Hardcore History Addendum": "https://dchhaddendum.libsyn.com/rss",
 }
 
 # The decrypted RW view of local media (encfs). MOUNT is checked before writing:

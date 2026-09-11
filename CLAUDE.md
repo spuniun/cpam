@@ -354,7 +354,9 @@ would cost terabytes of transfer and change nothing.
   `/home/plex/sorted/Podcasts` mount; ABS picks new files up on its own library
   scan, nothing here triggers one. `--list` shows have/missing per item,
   `--dry-run` reports without fetching. No secrets. Adding a feed is one line in
-  `FEEDS`. Log: `/home/plex/podcasts.log`.
+  `FEEDS` — the Addendum feed (`dchhaddendum.libsyn.com/rss`) is the second entry;
+  unlike the main feed it lists every episode, so it is just kept current.
+  Log: `/home/plex/podcasts.log`.
 - **watchtower** auto-updates all containers daily at 4am and prunes old images.
 - **wrapperr** has a known TODO: its config volume mapping (`/opt/wrapperr:/app/config`)
   must exist before cutover (see inline `FIX` comment).
