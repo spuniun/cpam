@@ -21,6 +21,7 @@ repo runs locally — changes take effect only after being pulled to the server.
 | `nginx/sites-available/cpam.tv` | All `*.cpam.tv` vhosts (one server block per app) |
 | `nginx/conf-available/` | Shared includes: `common.include` (TLS/headers/AI-scraper guard), `ai-blocklist.conf`, `cloudflare.ips`, `theme-park.include`, `letsencrypt.include` |
 | `nginx/update-cloudflare-ips.sh` | Weekly cron: refresh `cloudflare.ips` from upstream, validate, reload nginx |
+| `podcasts/fetch_feed.py` | Monthly cron: download the free episodes of the podcast feeds in its `FEEDS` table into `/home/plex/local-sorted/Podcasts/<name>` before they age out of the feed (Hardcore History moves them into the paid archive); skips files already on disk |
 | `plex/backdate-archive-added.py` | Set `addedAt` to the original air date for the Plex Archive collection, and lock it (`--apply`, `--rollback FILE`) |
 | `mnt_plex.sh` / `umnt_plex.sh` | Bring the storage + arrs + Plex up / down (see boot order below) |
 | `syncclouds.sh` | rclone-copy local encrypted media → Google Drive (`gdrive:/cpam`) |
@@ -335,6 +336,25 @@ would cost terabytes of transfer and change nothing.
   because the repo copy is root-owned, and it deliberately **does not git commit** —
   expect a dirty working tree after a real change. `--dry-run` previews, `--list`
   compares. Pushover keys are optional (missing = log only, never fatal).
+- **Host cron** (podcasts): `podcasts/fetch_feed.py` runs monthly (2nd, 03:00) and
+  downloads whatever is in each feed of its `FEEDS` table and not yet on disk. Dan
+  Carlin's feed only keeps ~13 shows free; older ones move into the paid archive, so
+  each show has to be caught while it is still listed. Files are named by the
+  enclosure URL basename (`dchha63_…mp3`), which is how the library has been named
+  since show 59 and is the dedupe key — same basename present means skip. It
+  writes to the encfs RW view, `/home/plex/local-sorted/Podcasts/`, and refuses to
+  run unless that is a mountpoint: with encfs down the path is a plain empty dir and
+  anything written there is plaintext that vanishes when encfs comes back.
+  Downloads go to `.part` and are renamed only when the byte count matches the
+  server's Content-Length (`http.client` returns `b''` instead of raising when a
+  transfer is cut short); a leftover `.part` is resumed with a Range request next
+  run. The feed's `enclosure length` is *not* trusted — it was off by 128 bytes to
+  2.4 MB on 4 of the first 6 files. Podcasts are local-only (not in `syncclouds.sh`
+  or `autoclean.sh`) and served by Audiobookshelf via its read-only
+  `/home/plex/sorted/Podcasts` mount; ABS picks new files up on its own library
+  scan, nothing here triggers one. `--list` shows have/missing per item,
+  `--dry-run` reports without fetching. No secrets. Adding a feed is one line in
+  `FEEDS`. Log: `/home/plex/podcasts.log`.
 - **watchtower** auto-updates all containers daily at 4am and prunes old images.
 - **wrapperr** has a known TODO: its config volume mapping (`/opt/wrapperr:/app/config`)
   must exist before cutover (see inline `FIX` comment).
