@@ -111,6 +111,23 @@ would cost terabytes of transfer and change nothing.
   which is exactly this symptom; `systemctl enable --now qbt-tunnel`. A 403 from
   `curl 172.28.0.1:8081/api/v2/app/version` means the tunnel is fine (qBittorrent
   refuses unauthenticated API calls); connection refused means it is not.
+- **Listenarr's built-in Discord bot must reach the API on loopback.** The
+  bot is a node child process (`/app/tools/discord-bot/index.js`) that Listenarr
+  starts from Settings, and it calls *back into Listenarr* at
+  `LISTENARR_PUBLIC_URL` — that env var is read by nothing else (checked both
+  DLLs) and the bot never uses it for links, only for API/hub calls. With the
+  public hostname it went out through Cloudflare and back into nginx, where the
+  scraper guard 403'd its `node-fetch` UA on `configuration/settings`; the bot
+  treats that as "no settings", never logs into Discord, and exits 0 — the UI
+  shows it as `start-bot` 500 / bot stopped. Hence
+  `LISTENARR_PUBLIC_URL=http://127.0.0.1:4545` in `arrs/docker-compose.yml`.
+  Two leftovers are upstream and harmless: the SignalR negotiate still 401s
+  (the bot sends the API key as `Authorization: Bearer`, which the server does
+  not accept — `X-Api-Key` and `?access_token=` do), so settings changes need a
+  bot restart rather than propagating live; and `EACCES … bot-session.log`
+  (the bot tries to write into the image's read-only tool dir).
+  Test: `POST /api/v1/discord/start-bot`, then `GET /api/v1/discord/bot-status`
+  should stay `isRunning: true` and the log should show `Discord client ready`.
 - **audiobookshelf**: config + metadata volumes MUST stay on plain local disk
   (SQLite over encfs/union mounts corrupts). Library dirs are mounted read-only —
   the arr apps own writes to media files. Its port is bound to loopback only

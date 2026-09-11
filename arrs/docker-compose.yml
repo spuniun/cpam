@@ -82,7 +82,11 @@ services:
       - PGID=${PGID}
       - TZ=${TZ:-America/New_York}
       - UMASK=022
-      - LISTENARR_PUBLIC_URL=https://audio.cpam.tv
+      # Read only by the built-in Discord bot, as the URL it calls the API on.
+      # Must be loopback: the public hostname routes the bot out through
+      # Cloudflare and back into nginx, where the scraper guard 403s its
+      # node-fetch UA and the bot exits without logging in. Not used for links.
+      - LISTENARR_PUBLIC_URL=http://127.0.0.1:4545
     volumes:
       - /var/lib/plexmediaserver/.config/Listenarr:/app/config
       - /home/plex/sorted/Audiobooks:/audiobooks
