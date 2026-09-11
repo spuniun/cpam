@@ -97,6 +97,20 @@ would cost terabytes of transfer and change nothing.
   container-to-container.
 - arrs stack pins subnet `172.28.0.0/16`. Host LAN IP is `172.20.20.250` — that's the
   address nginx proxies to and the compose port bindings serve on.
+- **listenarr's download client is a remote qBittorrent on unitmonkey**, reached
+  through a host systemd unit that is *not* in this repo:
+  `/etc/systemd/system/qbt-tunnel.service` runs
+  `ssh -NT -p 29876 -L 172.28.0.1:8081:127.0.0.1:10252 spuniun@unitmonkey.cpam.tv`
+  as `plex`, i.e. the qBittorrent WebUI is bound on the **arrs bridge gateway**
+  (`172.28.0.1`, the host side of the pinned `172.28.0.0/16` subnet) so only
+  containers on that network see it — Listenarr's client is `http://172.28.0.1:8081`.
+  Completed downloads arrive via the separate `rclone-unitmonkey.service` SFTP
+  mount at `/mnt/sftp/unitmonkey` (the container's `/downloads`). If Listenarr
+  reports the client unreachable, check `systemctl status qbt-tunnel` first — it
+  was found stopped *and disabled* in Sep 2026 (stopped Jul 23, never re-enabled),
+  which is exactly this symptom; `systemctl enable --now qbt-tunnel`. A 403 from
+  `curl 172.28.0.1:8081/api/v2/app/version` means the tunnel is fine (qBittorrent
+  refuses unauthenticated API calls); connection refused means it is not.
 - **audiobookshelf**: config + metadata volumes MUST stay on plain local disk
   (SQLite over encfs/union mounts corrupts). Library dirs are mounted read-only —
   the arr apps own writes to media files. Its port is bound to loopback only
