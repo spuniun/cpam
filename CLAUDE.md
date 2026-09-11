@@ -22,6 +22,8 @@ repo runs locally — changes take effect only after being pulled to the server.
 | `nginx/conf-available/` | Shared includes: `common.include` (TLS/headers/AI-scraper guard), `ai-blocklist.conf`, `cloudflare.ips`, `theme-park.include`, `letsencrypt.include` |
 | `nginx/update-cloudflare-ips.sh` | Weekly cron: refresh `cloudflare.ips` from upstream, validate, reload nginx |
 | `podcasts/fetch_feed.py` | Monthly cron: download the free episodes of the podcast feeds in its `FEEDS` table into `/home/plex/local-sorted/Podcasts/<name>` before they age out of the feed (Hardcore History moves them into the paid archive); skips files already on disk |
+| `podcasts/abs_match.py` | Bulk-match Audiobookshelf podcast episodes to feed data by **episode number** (ABS's own quick match is a near-exact title search that misses filename-style tags); `--import` applies `podcasts/metadata/*.json` for episodes older than the feed |
+| `podcasts/metadata/` | Episode metadata scraped for shows whose feeds no longer list them: `hardcore_history.json` (dancarlin.com product pages, all 74 shows), `weird_medicine.json` (2015 libsyn feed + libsyn monthly archive + RiotCast pages via the Wayback Machine, 419 records incl. the PREMIUM sequence) |
 | `plex/backdate-archive-added.py` | Set `addedAt` to the original air date for the Plex Archive collection, and lock it (`--apply`, `--rollback FILE`) |
 | `mnt_plex.sh` / `umnt_plex.sh` | Bring the storage + arrs + Plex up / down (see boot order below) |
 | `syncclouds.sh` | rclone-copy local encrypted media → Google Drive (`gdrive:/cpam`) |
@@ -357,6 +359,37 @@ would cost terabytes of transfer and change nothing.
   `FEEDS` — the Addendum feed (`dchhaddendum.libsyn.com/rss`) is the second entry;
   unlike the main feed it lists every episode, so it is just kept current.
   Log: `/home/plex/podcasts.log`.
+- **Audiobookshelf podcast episode metadata** (`podcasts/abs_match.py`, needs
+  `ABS_API_KEY` from the repo-root `.env` — a third uncommitted env file, holding
+  only that key). ABS fills episode details only for episodes *it* downloads;
+  scanned files get the ID3/filename title and nothing else until someone presses
+  Match. Its quick match (`POST /api/podcasts/<id>/match-episodes`, also run by
+  the podcast-level Match button) is fuse.js on the title at threshold 0.1, so
+  `dchha64 Supernova in the East III` never meets `Show 64 - …`, and when it does
+  fire it can pair the wrong pair: it had matched file `100 - Prepare to Be
+  Disappointed` to `300 - … Again`. The script instead keys on the episode number
+  (regexes per podcast in `PATTERNS`, filename side and feed-title side), demands
+  a title similarity ≥ 0.5 on top (premium/bonus items reuse numbers), treats a
+  matched episode whose title number disagrees with its filename as a wrong match
+  to redo, and writes the same fields a UI match would through
+  `PATCH /api/podcasts/<id>/episode/<epId>`. Feeds are parsed by ABS itself
+  (`POST /api/podcasts/feed`) so the fields are identical to a UI match; the
+  container **cannot reach web.archive.org**, so archived feeds go through
+  `--import` as saved RSS files instead. Two API details: `/api/podcasts/<id>/…`
+  takes the **library item** id, not the `media.id` the DB shows (404 otherwise);
+  and the PATCH runs descriptions through an HTML sanitizer, so compare text, not
+  markup, or every run rewrites every description. Weird Medicine files PREMIUM
+  episodes as `<main ep>.<premium #>` (`238.05 - PREMIUM - …`) while the feed
+  numbers them `05 - PREMIUM - …` as a separate sequence — the regex's optional
+  group 2 keys those as `P5`. Source precedence for `weird_medicine.json` was live
+  feed (exact timestamps + enclosure) > 2015 libsyn feed (exact timestamps) >
+  libsyn monthly archive pages > RiotCast show pages (date only, stored as noon
+  UTC). Five WM files match no source and keep their tag data (`010A`, `025 Mad
+  Scientist Party Hour`, `035` — its tag says it is really "010 - Asscrack
+  Challenge" — `Miserable Music Bed`, and nothing for `Hardcore Game of Thrones`,
+  which has no feed at all). Re-run after a library rebuild:
+  `abs_match.py` (live feeds, all three) then `--import podcasts/metadata/<show>.json <title>`;
+  every run is idempotent and `--dry-run` shows the diff.
 - **watchtower** auto-updates all containers daily at 4am and prunes old images.
 - **wrapperr** has a known TODO: its config volume mapping (`/opt/wrapperr:/app/config`)
   must exist before cutover (see inline `FIX` comment).
