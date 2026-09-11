@@ -18,7 +18,7 @@ collections:
 
   Bourne:
     template: {name: collection}
-    trakt_list: https://trakt.tv/users/rzepkowski/lists/jason-bourne-movies
+    trakt_list: https://app.trakt.tv/users/rygo92/lists/jason-bourne
     url_poster: https://theposterdb.com/api/assets/19519
 
   Christmas:
@@ -152,7 +152,7 @@ collections:
   National Lampoon's:
     template: {name: collection}
     tmdb_collection: 108693
-    trakt_list: https://trakt.tv/users/bruinschris/lists/national-lampoon-s-vacation-series
+    trakt_list: https://app.trakt.tv/users/paulison1966/lists/national-lampoon-vacation
     imdb_id: tt1600409
     url_poster: https://theposterdb.com/api/assets/68744
 
