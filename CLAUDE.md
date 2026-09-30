@@ -165,9 +165,14 @@ would cost terabytes of transfer and change nothing.
   for shorts and specials no maintained list carries. SIMKL is *not* a
   replacement — Kometa's SIMKL module has only `simkl_trending`/`simkl_dvd`, no
   user lists. The pre-removal membership came from the `Removed from … Collection`
-  lines in the first 2.5.0 run's log plus the frozen Plex collections. Two titles
-  were knowingly dropped: the Deadpool shorts in X-Men Universe (no list carries
-  them, and the universe template cannot pin single movies).
+  lines in the first 2.5.0 run's log plus the frozen Plex collections. The
+  `universe` template cannot pin single movies, so the two Deadpool shorts in
+  X-Men Universe that no public list carries live in our own TMDb list
+  `8701373` (account `spuniun`), passed as `tmdb_list_xmen`. Setting any
+  `*_list_<key>` override turns off the default's own list for that key, which
+  is why `imdb_list_xmen` restates the default IMDb list. Editing that TMDb list
+  needs a login session (`/3/authentication/token/new`, approve in the browser,
+  `session/new`); reading it needs only the API key.
 - **Don't set `radarr.add_existing: true`** on the Movies library. It injects
   `add_existing` into every builder's `item_details`, which makes Kometa reload
   each item of every collection *and playlist*. Reloading a playlist item drops

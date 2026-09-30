@@ -43,9 +43,13 @@ libraries:
         - rocky
         imdb_list_star: https://www.imdb.com/list/ls072034866/
         # Adds the LEGO Star Wars specials the IMDb list lacks (they came from
-        # a Trakt list before Kometa dropped Trakt). X-Men has no override and
-        # uses the default's own IMDb list.
+        # a Trakt list before Kometa dropped Trakt).
         mdblist_list_star: https://mdblist.com/lists/globalwang2020/star-wars
+        # The default's own X-Men IMDb list, restated: any *_list_xmen override
+        # switches the default off. The TMDb list is ours (account spuniun) and
+        # holds only the two Deadpool shorts no public list carries.
+        imdb_list_xmen: https://www.imdb.com/list/ls567618635/
+        tmdb_list_xmen: 8701373  # "X-Men Universe – Deadpool shorts"
         imdb_list_trek: https://www.imdb.com/list/ls062347197/
         imdb_list_avp: https://www.imdb.com/list/ls064969885/
         url_poster_avp: https://theposterdb.com/api/assets/43452
