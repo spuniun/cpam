@@ -82,7 +82,7 @@ would cost terabytes of transfer and change nothing.
   `PUSHOVER_APP_TOKEN`, `PUSHOVER_USER_KEY` (kometa error digest), and the kometa
   Config Secrets: `KOMETA_PLEXTOKEN`, `KOMETA_TMDBKEY`, `KOMETA_TAUTULLIKEY`,
   `KOMETA_OMDBKEY`, `KOMETA_MDBLISTKEY`, `KOMETA_RADARRKEY`, `KOMETA_PRERADARRKEY`,
-  `KOMETA_SONARRKEY`. (No `KOMETA_TRAKT*` — Trakt runs in public mode, see below.)
+  `KOMETA_SONARRKEY`. (No `KOMETA_TRAKT*` — Kometa no longer supports Trakt, see below.)
   Don't hardcode UIDs or secrets into the compose files. Note there are **two**
   uncommitted env files, one per stack: the list above is `infra/.env`, while
   `arrs/.env` holds `PUID`/`PGID`/`TZ` plus `PRERADARR_API_KEY` and `PLEX_TOKEN`
@@ -148,19 +148,26 @@ would cost terabytes of transfer and change nothing.
   `infra/kometa/deploy.sh` after a git pull. The committed `config.yml` contains no
   secrets: `<<name>>` markers are Kometa **Config Secrets**, resolved at runtime
   from the `KOMETA_*` env vars the compose file passes in from `.env` (secret names
-  must not contain underscores). `deploy.sh` still carries `trakt.authorization`
-  forward from the live copy, but it is empty and unused today. Never commit a
-  config.yml with real tokens inlined.
-- **kometa Trakt is deliberately in public mode.** Trakt deleted a swathe of
-  existing API apps in late July 2026, ours included — the old client id now
-  returns `401 invalid_client`, which broke even unauthenticated list reads, and
-  creating a replacement needs a paid VIP account. `client_id`/`client_secret` are
-  therefore blank, so Kometa falls back to its own public client id. That is
-  sufficient: every Trakt builder here is a public `trakt_list`, which needs only
-  an API key. Do **not** set `client_secret` — Kometa only attempts a token
-  refresh when it is set, and that refresh is what produced the daily "Trakt
-  authorization is invalid" error. Kometa 2.4.8 also removed the in-config `pin:`
-  flow entirely; re-auth now means pasting a block from utilities.kometa.wiki.
+  must not contain underscores). `deploy.sh` is a plain copy of the four yml
+  files. Never commit a config.yml with real tokens inlined.
+- **Kometa has no Trakt support — keep the string `trakt` out of its YAML.**
+  Kometa 2.5.0 (auto-updated by watchtower, Sep 22 2026) removed Trakt entirely.
+  Before building anything, `util.remove_trakt` strips every key *and every string
+  value* containing "trakt" and logs one `Trakt is no longer supported` ERROR per
+  file. Collections whose only builder was a `trakt_list` were left with
+  `No builders were found` and went unmanaged. Collections with other sources kept
+  running in `sync` mode and silently dropped the Trakt-only titles. The string
+  match also caught `mass_audience_rating_update: mdb_trakt` (MDBList's rating, not
+  the Trakt API), which turned the TV library's rating update into a no-op.
+  Replacements, in order of preference: `tmdb_collection` for franchises
+  (TMDb-maintained, no account); the lists the `universe` default already uses for
+  Marvel/DC; a vetted `mdblist_list`; and `tmdb_movie` pins, with a title comment,
+  for shorts and specials no maintained list carries. SIMKL is *not* a
+  replacement — Kometa's SIMKL module has only `simkl_trending`/`simkl_dvd`, no
+  user lists. The pre-removal membership came from the `Removed from … Collection`
+  lines in the first 2.5.0 run's log plus the frozen Plex collections. Two titles
+  were knowingly dropped: the Deadpool shorts in X-Men Universe (no list carries
+  them, and the universe template cannot pin single movies).
 - **Don't set `radarr.add_existing: true`** on the Movies library. It injects
   `add_existing` into every builder's `item_details`, which makes Kometa reload
   each item of every collection *and playlist*. Reloading a playlist item drops

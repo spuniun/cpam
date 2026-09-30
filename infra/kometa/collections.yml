@@ -12,13 +12,14 @@ templates:
 collections:
   James Bond:
     template: {name: collection}
-    trakt_list: https://trakt.tv/users/any/lists/james-bond
+    tmdb_collection: 645
+    tmdb_movie: 12208  # Casino Royale (1967) — not Eon, so not in TMDb's collection
     url_poster: https://i.imgur.com/DO6IDWi.jpeg
     url_background: https://www.pixel4k.com/wp-content/uploads/2018/09/james-bond-007_1536401470.jpg
 
   Bourne:
     template: {name: collection}
-    trakt_list: https://app.trakt.tv/users/rygo92/lists/jason-bourne
+    tmdb_collection: 31562
     url_poster: https://theposterdb.com/api/assets/19519
 
   Christmas:
@@ -27,19 +28,48 @@ collections:
       - https://www.imdb.com/list/ls000096828/
       - https://www.imdb.com/list/ls031382358/
       - https://www.imdb.com/list/ls047836098/
-    trakt_list: 
-      - https://trakt.tv/users/triadcool/lists/christmas
-      - https://trakt.tv/users/lewisb1120/lists/christmas
     mdblist_list: https://mdblist.com/lists/CyberOxide/christmas
+    # Held over from the two Trakt Christmas lists (Kometa dropped Trakt in
+    # 2.5.0): the titles only those lists supplied. No MDBList list covered
+    # more than half of them, so they are pinned instead.
+    tmdb_movie:
+      - 9714    # Home Alone 3 (1997)
+      - 245     # About a Boy (2002)
+      - 12536   # Home Alone 4: Taking Back the House (2002)
+      - 13352   # It's a Very Merry Muppet Christmas Movie (2002)
+      - 27933   # The Legend of Frosty the Snowman (2005)
+      - 263945  # Curious George: A Very Monkey Christmas (2009)
+      - 79579   # An Elf's Story: The Elf on the Shelf (2010)
+      - 51256   # Donkey's Caroling Christmas-tacular (2010)
+      - 151316  # Shrek's Yule Log (2010)
+      - 39451   # Little Fockers (2010)
+      - 79218   # Ice Age: A Mammoth Christmas (2011)
+      - 81188   # Rise of the Guardians (2012)
+      - 134375  # Home Alone: The Holiday Heist (2012)
+      - 146304  # The Best Man Holiday (2013)
+      - 312100  # Elf: Buddy's Musical Christmas (2014)
+      - 311539  # A Christmas Horror Story (2015)
+      - 447061  # Red Nose Day Actually (2017)
+      - 460793  # Olaf's Frozen Adventure (2017)
+      - 419680  # Daddy's Home 2 (2017)
+      - 485517  # A Christmas Story Live! (2017)
+      - 360920  # The Grinch (2018)
+      - 331482  # Little Women (2019)
+      - 654028  # The Christmas Chronicles: Part Two (2020)
+      - 762879  # Christmas Again (2021)
     url_poster: https://theposterdb.com/api/assets/69443
 
   DC Comics:
     template: {name: collection}
-    trakt_list: https://app.trakt.tv/users/ricksanchez/lists/dc-universe-movies
     mdblist_list:
       - https://mdblist.com/lists/godzgiftmm/dc-animated-universe-and-dc-comics
       - https://mdblist.com/lists/lt3dave/dc-comics-3nyof3xt9n
       - https://mdblist.com/lists/asperate/dc-movies
+      - https://mdblist.com/lists/fa11en82/dc-extended-universe  # the universe default's DCEU list
+    tmdb_list: 8642250  # DC Studios (DCU) — the universe default's DCU list
+    tmdb_movie:
+      - 475557  # Joker (2019)
+      - 889737  # Joker: Folie à Deux (2024)
     url_poster: https://theposterdb.com/api/assets/314385
 
   Die Hard:
@@ -71,7 +101,7 @@ collections:
   Indiana Jones:
     template: {name: collection}
     tmdb_collection: 84
-    trakt_list: https://trakt.tv/users/krissykk/lists/indiana-jones-franchise
+    tmdb_movie: 139282  # Lego Indiana Jones and the Raiders of the Lost Brick (2008)
     imdb_id: tt0772251
     url_poster: https://theposterdb.com/api/assets/11586
 
@@ -83,16 +113,15 @@ collections:
 
   Jurassic Park:
     template: {name: collection}
-    trakt_list: https://trakt.tv/users/krissykk/lists/jurassic-park-collection-official-list
+    tmdb_collection: 328
+    tmdb_movie: 419566  # LEGO Jurassic World: The Indominus Escape (2016)
     url_poster: https://theposterdb.com/api/assets/17151
 
   LEGO:
     template: {name: collection}
     tmdb_collection: 1004630
     imdb_list: https://www.imdb.com/list/ls075033283/
-    trakt_list: 
-      - https://trakt.tv/users/arachn0id/lists/lego-movies-tv-series
-      - https://app.trakt.tv/users/puravidabarron/lists/lego
+    mdblist_list: https://mdblist.com/lists/beardedsapper/lego-movies-80-current
     url_poster: https://theposterdb.com/api/assets/11979
 
   Living Dead:
@@ -107,11 +136,15 @@ collections:
 
   Marvel:
     template: {name: collection}
-    trakt_list:
-      - https://trakt.tv/users/martheo/lists/marvel
-      - https://trakt.tv/users/arachn0id/lists/marvel-animated
-      - https://trakt.tv/lists/19914544  # official "LEGO Marvel Super Heroes Collection"; slug form 400s on /items
+    imdb_list: https://www.imdb.com/list/ls539646485/  # the universe default's MCU list
     mdblist_list: https://mdblist.com/lists/k0meta/external/15110
+    tmdb_movie:
+      - 177572  # Big Hero 6 (2014)
+      - 558144  # Deadpool: No Good Deed (2017)
+      - 368304  # Lego Marvel Super Heroes: Avengers Reassembled (2015)
+      - 528222  # LEGO Marvel Super Heroes: Black Panther - Trouble in Wakanda (2018)
+      - 622230  # Lego Marvel Spider-Man: Vexed by Venom (2019)
+      - 899249  # LEGO Marvel Avengers: Loki in Training (2021)
     url_poster: https://theposterdb.com/api/assets/81748
 
   Mexico Trilogy:
@@ -152,7 +185,9 @@ collections:
   National Lampoon's:
     template: {name: collection}
     tmdb_collection: 108693
-    trakt_list: https://app.trakt.tv/users/paulison1966/lists/national-lampoon-vacation
+    tmdb_movie:
+      - 11155   # Christmas Vacation 2: Cousin Eddie's Island Adventure (2003)
+      - 296099  # Vacation (2015)
     imdb_id: tt1600409
     url_poster: https://theposterdb.com/api/assets/68744
 
@@ -182,7 +217,16 @@ collections:
 
   Shrek:
     template: {name: collection}
-    trakt_list: https://trakt.tv/users/nukeproof1333/lists/shrek-universe
+    tmdb_collection:
+      - 2150   # Shrek
+      - 94602  # Puss in Boots
+    tmdb_movie:
+      - 51256   # Donkey's Caroling Christmas-tacular (2010)
+      - 151316  # Shrek's Yule Log (2010)
+      - 118249  # Scared Shrekless: Thriller Night (2011)
+      - 82530   # The Pig Who Cried Werewolf (2011)
+      - 83201   # Puss in Boots: The Three Diablos (2012)
+      - 462650  # Puss in Book: Trapped in an Epic Tale (2017)
     imdb_id: tt2486724
     url_poster: https://theposterdb.com/api/assets/95301
 
@@ -193,7 +237,17 @@ collections:
 
   TMNT:
     template: {name: collection}
-    trakt_list: https://trakt.tv/users/yoru14/lists/teenage-mutant-ninja-turtles
+    tmdb_collection:
+      - 1582     # 1990-93 live-action trilogy
+      - 401562   # 2014 remake
+      - 1156855  # Mutant Mayhem
+      - 1195879  # 2016-18 shorts
+    tmdb_movie:
+      - 147939  # We Wish You a Turtle Christmas (1994)
+      - 1273    # TMNT (2007)
+      - 34003   # Turtles Forever (2009)
+      - 366861  # Half-Shell Heroes: Blast to the Past (2015)
+      - 581997  # Batman vs Teenage Mutant Ninja Turtles (2019)
     url_poster: https://theposterdb.com/api/assets/5169
 
   Transformers:

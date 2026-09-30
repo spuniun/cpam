@@ -1,8 +1,7 @@
 ## No secrets live in this file — the <<name>> markers are Kometa "Config
 ## Secrets", substituted at runtime from KOMETA_<NAME> environment variables
 ## (passed into the container by infra/docker-compose.yml from the server .env).
-## Deploy with ./deploy.sh, which copies this into the live config dir and
-## preserves the trakt.authorization block Kometa autofills at runtime.
+## Deploy with ./deploy.sh, which copies this into the live config dir.
 ## Secret names must not contain underscores (<<my_secret>> won't resolve).
 
 libraries:
@@ -43,10 +42,10 @@ libraries:
         - marvel
         - rocky
         imdb_list_star: https://www.imdb.com/list/ls072034866/
-        trakt_list_star:
-        - https://trakt.tv/users/feeltheduck/lists/star-wars-collection
-        - https://trakt.tv/users/pierredurrr/lists/lego-star-wars-saga
-        trakt_list_xmen: https://trakt.tv/users/pandako/lists/x-men-cinematic-universe
+        # Adds the LEGO Star Wars specials the IMDb list lacks (they came from
+        # a Trakt list before Kometa dropped Trakt). X-Men has no override and
+        # uses the default's own IMDb list.
+        mdblist_list_star: https://mdblist.com/lists/globalwang2020/star-wars
         imdb_list_trek: https://www.imdb.com/list/ls062347197/
         imdb_list_avp: https://www.imdb.com/list/ls064969885/
         url_poster_avp: https://theposterdb.com/api/assets/43452
@@ -133,7 +132,7 @@ libraries:
         horizontal_align: left
         vertical_align: bottom
     operations:
-      mass_audience_rating_update: mdb_trakt
+      mass_audience_rating_update: mdb_tomatoesaudience
       mass_episode_audience_rating_update: tmdb
     sonarr:
       url: http://172.20.20.250:8989
@@ -297,37 +296,3 @@ omdb:
 mdblist:
   apikey: <<mdblistkey>>
   cache_expiration: 60
-trakt:
-  # Both deliberately blank — do NOT put KOMETA_TRAKTID/KOMETA_TRAKTSECRET back.
-  #
-  # Trakt deleted a swathe of existing API apps in late July 2026, ours among
-  # them: the old client id now 401s "client not found", which is why even
-  # unauthenticated list reads started failing (403) and every trakt_list in the
-  # universe collections 404'd. Creating a replacement app needs a paid VIP
-  # account. With client_id blank Kometa falls back to its own public client id
-  # (trakt.py: `params.get("client_id") or _get_public_client_id()`) and logs
-  # "Connecting to Trakt in public mode".
-  #
-  # Public mode is all this config needs: every builder here is a trakt_list
-  # against a public list, and those return 200 with nothing but an API key.
-  # Only the /users/me/* builders (watchlist, collection, ratings, list sync)
-  # require a user token, and none are used.
-  #
-  # client_secret must stay blank too: Kometa only attempts a token refresh
-  # when it is set, and that refresh against the dead app is what produced the
-  # daily "Trakt authorization is invalid" error. Blank means no refresh is
-  # attempted and no authorization is needed at all.
-  client_id:
-  client_secret:
-  authorization:
-    # Unused in public mode, and the values Kometa stored here in Oct 2025 are
-    # dead (refresh returns invalid_grant "session not found"). Kept as empty
-    # keys because deploy.sh matches on them to carry a live authorization
-    # forward, should Trakt ever make app creation free again.
-    access_token:
-    token_type:
-    expires_in:
-    refresh_token:
-    scope:
-    created_at:
-  force_refresh:
