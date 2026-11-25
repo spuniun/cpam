@@ -114,6 +114,17 @@ would cost terabytes of transfer and change nothing.
   which is exactly this symptom; `systemctl enable --now qbt-tunnel`. A 403 from
   `curl 172.28.0.1:8081/api/v2/app/version` means the tunnel is fine (qBittorrent
   refuses unauthenticated API calls); connection refused means it is not.
+- **`rclone-unitmonkey.service` must keep `RCLONE_VFS_FAST_FINGERPRINT=true`** (host
+  drop-in `/etc/systemd/system/rclone-unitmonkey.service.d/fast-fingerprint.conf`,
+  not in this repo). The VFS cache fingerprints a file on open, and on the sftp
+  backend that fingerprint includes a hash, i.e. a full remote `md5sum` of the file
+  over ssh. Found Nov 2026 when Sonarr ffprobed a 350 GB UHD disc folder: one open of
+  a 38 GB `.m2ts` took ~3 minutes, was re-hashed on the next open, pinned unitmonkey's
+  disk at 99% util, 504'd ruTorrent and stalled every import behind it (Sonarr's
+  `ProcessMonitoredDownloads` is serial). With the flag the same open takes 0.5 s.
+  Diagnose with `pgrep -a md5sum` on unitmonkey. Remounting leaves the containers on
+  a dead bind mount, so stop sonarr, radarr, preradarr, lidarr and listenarr first
+  and start them again once the mount is back.
 - **Listenarr's built-in Discord bot must reach the API on loopback.** The
   bot is a node child process (`/app/tools/discord-bot/index.js`) that Listenarr
   starts from Settings, and it calls *back into Listenarr* at
