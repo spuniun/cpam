@@ -90,7 +90,7 @@ services:
     volumes:
       - /var/lib/plexmediaserver/.config/Listenarr:/app/config
       - /home/plex/sorted/Audiobooks:/audiobooks
-      - /mnt/sftp/unitmonkey/Downloads/audiobooks:/downloads
+      - /mnt/sftp/unitmonkey/torrents/qbittorrent/audiobooks:/downloads
     ports:
       - 4545:4545
     restart: unless-stopped
