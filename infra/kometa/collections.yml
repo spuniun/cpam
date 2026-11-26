@@ -24,14 +24,33 @@ collections:
 
   Christmas:
     template: {name: collection}
-    imdb_list: 
+    # One dead source is worse than it looks: an IMDb list that goes private raises,
+    # and Kometa abandons the WHOLE collection, freezing its membership. That
+    # is what happened in Nov 2026 (ls031382358 went private; the CyberOxide
+    # MDBList list 404s as well). If the collection stops gaining titles,
+    # grep meta.log for "Christmas Collection" before adding more lists.
+    # Sources were picked against the Movies library (Nov 2026, 153 candidate
+    # titles). Rejected as too noisy: mdblist amything/christmas-horror
+    # (Christine, Prometheus), rizreflects (Shazam!), paperarmour (Abominable),
+    # nkipling/christmas-2025 (A Charlie Brown Thanksgiving), and the TMDb
+    # keywords "santa claus"/"christmas party"/"christmas eve" (Eyes Wide Shut,
+    # Sleepless in Seattle).
+    imdb_list:
       - https://www.imdb.com/list/ls000096828/
-      - https://www.imdb.com/list/ls031382358/
       - https://www.imdb.com/list/ls047836098/
-    mdblist_list: https://mdblist.com/lists/CyberOxide/christmas
-    # Held over from the two Trakt Christmas lists (Kometa dropped Trakt in
-    # 2.5.0): the titles only those lists supplied. No MDBList list covered
-    # more than half of them, so they are pinned instead.
+    mdblist_list:
+      - https://mdblist.com/lists/k0meta/christmas-extravaganza  # Kometa's own (seasonal default)
+      - https://mdblist.com/lists/hdlists/christmas-movies
+      - https://mdblist.com/lists/tbeaton37/christmas
+      - https://mdblist.com/lists/tracerbullet/christmas-movies
+      - https://mdblist.com/lists/abbacarter/christmas-mdb
+    # TMDb keyword "christmas": self-updating, so new releases arrive without
+    # anyone curating a list. The lists above lag a season or more.
+    tmdb_keyword: 207317
+    # Pins. The first block is held over from the two Trakt Christmas lists
+    # (Kometa dropped Trakt in 2.5.0); most are now also in a list above, but
+    # stay pinned so list churn can't drop them. The last three no kept source
+    # carries.
     tmdb_movie:
       - 9714    # Home Alone 3 (1997)
       - 245     # About a Boy (2002)
@@ -57,6 +76,9 @@ collections:
       - 331482  # Little Women (2019)
       - 654028  # The Christmas Chronicles: Part Two (2020)
       - 762879  # Christmas Again (2021)
+      - 1573    # Die Hard 2 (1990) — Christmas Eve, like Die Hard
+      - 1005331 # Carry-On (2024) — Christmas Eve
+      - 1142715 # Mystic Christmas (2023)
     url_poster: https://theposterdb.com/api/assets/69443
 
   DC Comics:
