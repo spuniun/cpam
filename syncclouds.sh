@@ -76,6 +76,7 @@ TV_SYNCS=(
     "High Potential|CAnPzeRGlErERENGFMB2Mj,6"
     "Homeland|6RxuqwxSJHiVbNQh-ZTfPUCo"
     "House of the Dragon|X,T5ShY-HhmKHSVilJC0iSjMknpZneyEppyukuTtCKHWW,"
+    "Knight of the Seven Kingdoms|ZQEhK4KWxAtIxSIackrr-,KbzeDTwsMhSuxXAzg1fJ-Kf8t89k2Ubwa,k1TRW3gBsMSkr-CDWWGPzMLGhYeBN2ij"
     "Law and Order|Uyq69BS0kx5w3ngQAvnU3inY"
     "LEGO Star Wars|ngQLHhKfY-6,eSydk2Xi9ZOm"
     "Leftovers|fyktQIzJG7,q2rXQXNF92Iwa"

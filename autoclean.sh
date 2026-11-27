@@ -33,6 +33,7 @@ SEARCH_DIRS=(
     "Workout"
     
     # TV Shows - Alphabetical for easy lookup
+    "TV/A Knight of the Seven Kingdoms - The Hedge Knight"
     "TV/1883"
     "TV/Ali G Rezurection"
     "TV/Andor"
