@@ -280,6 +280,24 @@ would cost terabytes of transfer and change nothing.
   "nobody has touched this" test. `Tautulli.lastViewedAt` (id 4) is the equivalent on
   that side. The same trap is live in `720p_requests.yml` section 1, masked only by
   Tautulli's shallower history.
+- **Sonarr's `4K` profile (id 7) ranks WEB-2160p *above* Bluray-2160p, cutoff
+  WEB-2160p — on purpose, for Plex playback rather than bit-for-bit quality.**
+  Nearly every 4K play is remote (Tautulli, Nov 2026: 2296 of 2297 over a year),
+  and direct play collapses with bitrate: 24% of <30 Mbps files direct played, 1% of
+  30–50 Mbps, 0 of 71 at 50 Mbps+, where 76% were downscaled through the UHD 630.
+  UHD discs are the worst case on all three axes: ~70 Mbps, Dolby Vision **profile 7**
+  (FEL; clients that do DV want profile 5/8, which is what WEB releases carry), and
+  TrueHD (transcoded in 405 of 417 plays). WEB-DL is ~15–20 Mbps HEVC, DV P8 with
+  HDR10 fallback, and DD+ Atmos. Bluray-2160p stays allowed as the fallback for
+  disc-only titles.
+  **Custom formats: a negative score on something the renamed file reveals but release
+  titles omit makes an upgrade loop.** Existing files are scored on their *filename*,
+  and the naming format writes `{MediaInfo.AudioCodec}` etc. into it. The old
+  `TrueHD = -1` format scored every disc file -1 after import, while the same content
+  without "TrueHD" in its name scored 0 — a +1 "upgrade" that grabbed the x265 re-encode
+  over the untouched `H265-BRAVERY` House of the Dragon S3, and would have ping-ponged
+  back. Penalise only things that appear in both (group names, `AMZN`); for MediaInfo
+  attributes use positive scores or none.
 - **preradarr add** (`arrs/scripts/preradarr-add.sh`) is the other half of the
   preradarr pair: a Radarr **Custom Script** connection ("Preradarr Add", on
   **Movie Added** only) that copies a newly added movie into preradarr when the
