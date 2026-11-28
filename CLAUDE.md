@@ -289,7 +289,17 @@ would cost terabytes of transfer and change nothing.
   (FEL; clients that do DV want profile 5/8, which is what WEB releases carry), and
   TrueHD (transcoded in 405 of 417 plays). WEB-DL is ~15–20 Mbps HEVC, DV P8 with
   HDR10 fallback, and DD+ Atmos. Bluray-2160p stays allowed as the fallback for
-  disc-only titles.
+  disc-only titles. **Radarr's `4K` profile (id 7) has the same order and cutoff**:
+  its Bluray-2160p files are mostly 38–45 Mbps encodes rather than full-bitrate rips,
+  but 4K movie plays went 18% direct play under 30 Mbps vs 0 of 86 at 30–50 Mbps,
+  and 59 of the 64 carry lossless audio.
+  Both apps also have a **`DV without HDR10`** format
+  (`^(?!.*\bHDR).*\b(DV|DoVi)\b` on the release title, -5 in the 4K profiles) for
+  Dolby Vision-only (usually profile 5, ATVP/some DSNP) releases, which have no HDR10
+  base layer for non-DV clients; no such file has ever been played here, so it is a
+  preference, not a ban. It ranks within a quality tier — it does not push a WEB
+  release below Bluray-2160p. Sonarr's 4K `minFormatScore` must stay **-9**: that is
+  what rejects `EVO = -10`. Radarr's is -10 so the -5 is not a rejection.
   **Custom formats: a negative score on something the renamed file reveals but release
   titles omit makes an upgrade loop.** Existing files are scored on their *filename*,
   and the naming format writes `{MediaInfo.AudioCodec}` etc. into it. The old
