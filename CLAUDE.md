@@ -297,7 +297,9 @@ would cost terabytes of transfer and change nothing.
   (`^(?!.*\bHDR).*\b(DV|DoVi)\b` on the release title, -5 in the 4K profiles) for
   Dolby Vision-only (usually profile 5, ATVP/some DSNP) releases, which have no HDR10
   base layer for non-DV clients; no such file has ever been played here, so it is a
-  preference, not a ban. It ranks within a quality tier — it does not push a WEB
+  preference, not a ban. (It replaced the `DoVi` / `.DV.` ignored terms in Radarr's
+  release profile, which rejected *every* DV release — hybrids with an HDR10 fallback,
+  the best-playing kind here, included. Don't put them back.) It ranks within a quality tier — it does not push a WEB
   release below Bluray-2160p. Sonarr's 4K `minFormatScore` must stay **-9**: that is
   what rejects `EVO = -10`. Radarr's is -10 so the -5 is not a rejection.
   **Custom formats: a negative score on something the renamed file reveals but release
